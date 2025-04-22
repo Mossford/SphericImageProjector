@@ -32,7 +32,8 @@ void Shader::CompileShader(std::string location, SDL_GPUDevice* device, Uint32 s
 	char fullPath[256];
 	SDL_GPUShaderFormat backendFormats = SDL_GetGPUShaderFormats(device);
 	SDL_GPUShaderFormat format = SDL_GPU_SHADERFORMAT_INVALID;
-	const char *entrypoint;
+	//for hlsl this will only be main
+	const char *entrypoint = "main";
 
 	size_t codeSize;
 	void* code = SDL_LoadFile(filePath, &codeSize);
