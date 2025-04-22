@@ -9,9 +9,9 @@
 
 #include "app.hpp"
 #include "mesh.hpp"
+#include "vertex.hpp"
 
-constexpr uint32_t windowStartWidth = 1920;
-constexpr uint32_t windowStartHeight = 1080;
+void Draw(AppContext* app);
 
 SDL_AppResult SDL_Fail()
 {
@@ -21,6 +21,7 @@ SDL_AppResult SDL_Fail()
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 {
+
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO))
     {
         return SDL_Fail();
@@ -76,29 +77,77 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
         SDL_GetWindowSizeInPixels(window, &bbwidth, &bbheight);
     }
 
-    SDL_GPUGraphicsPipelineCreateInfo pipelineCreateInfo =
+    GpuPipeline gpuPipeline;
+    gpuPipeline.vertexShader.CompileShader(basePath.string() + "default.vert", gpuDevice, 0, 0, 0, 0);
+    gpuPipeline.fragmentShader.CompileShader(basePath.string() + "default.frag", gpuDevice, 0, 0, 0, 0);
+
+    gpuPipeline.pipelineCreateInfo =
     {
-		.target_info =
+        .vertex_shader = gpuPipeline.vertexShader.shader,
+		.fragment_shader = gpuPipeline.fragmentShader.shader,
+        .vertex_input_state = (SDL_GPUVertexInputState){
+            .vertex_buffer_descriptions = (SDL_GPUVertexBufferDescription[])
+            {{
+				.slot = 0,
+                .pitch = sizeof(Vertex),
+				.input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX,
+				.instance_step_rate = 0,
+			}},
+			.num_vertex_buffers = 1,
+			.vertex_attributes = (SDL_GPUVertexAttribute[])
+            {{
+                .location = 0,
+				.buffer_slot = 0,
+				.format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3,
+				.offset = 0
+			}, 
+            {
+                .location = 1,
+				.buffer_slot = 0,
+				.format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3,
+				.offset = sizeof(float) * 3
+			},
+            {
+                .location = 2,
+                .buffer_slot = 0,
+				.format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,
+				.offset = sizeof(float) * 2
+            }},
+            .num_vertex_attributes = 3,
+		},
+		.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST,
+        .target_info =
         {
-			.num_color_targets = 1,
-			.color_target_descriptions = (SDL_GPUColorTargetDescription[])
+            .color_target_descriptions = (SDL_GPUColorTargetDescription[])
             {{
 				.format = SDL_GetGPUSwapchainTextureFormat(gpuDevice, window)
 			}},
+			.num_color_targets = 1,
 		},
-		.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST,
-		.vertex_shader = vertexShader,
-		.fragment_shader = fragmentShader,
 	};
+
+    gpuPipeline.pipelineCreateInfo.rasterizer_state.fill_mode = SDL_GPU_FILLMODE_FILL,
+
+    gpuPipeline.viewPort = {0, 0, windowStartWidth, windowStartHeight, 0.1f, 1.0f};
+
+    gpuPipeline.fillPipeline = SDL_CreateGPUGraphicsPipeline(gpuDevice, &gpuPipeline.pipelineCreateInfo);
+	if (!gpuPipeline.fillPipeline)
+	{
+		return SDL_Fail();
+	}
 
     *appstate = new AppContext
     {
        .window = window,
        .gpuDevice = gpuDevice,
        .basePath = basePath.string().c_str(),
+       .pipeline = gpuPipeline,
     };
 
     SDL_SetRenderVSync(renderer, -1);
+
+    SDL_ReleaseGPUShader(gpuDevice, gpuPipeline.fragmentShader.shader);
+    SDL_ReleaseGPUShader(gpuDevice, gpuPipeline.vertexShader.shader);
 
     return SDL_APP_CONTINUE;
 }
@@ -119,6 +168,7 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 {
     AppContext* app = (AppContext*)appstate;
     
+    Draw(app);
 
     return app->app_quit;
 }
@@ -128,6 +178,7 @@ void SDL_AppQuit(void* appstate, SDL_AppResult result)
     AppContext* app = (AppContext*)appstate;
     if (app)
     {
+        SDL_ReleaseGPUGraphicsPipeline(app->gpuDevice, app->pipeline.fillPipeline);
         SDL_ReleaseWindowFromGPUDevice(app->gpuDevice, app->window);
         SDL_DestroyWindow(app->window);
         SDL_DestroyGPUDevice(app->gpuDevice);
@@ -135,4 +186,38 @@ void SDL_AppQuit(void* appstate, SDL_AppResult result)
     }
     
     SDL_Quit();
+}
+
+void Draw(AppContext* app)
+{
+    SDL_GPUCommandBuffer* cmdbuf = SDL_AcquireGPUCommandBuffer(app->gpuDevice);
+    if (cmdbuf == NULL)
+    {
+        SDL_Log("AcquireGPUCommandBuffer failed: %s", SDL_GetError());
+        return;
+    }
+
+    SDL_GPUTexture* swapchainTexture;
+    if (!SDL_WaitAndAcquireGPUSwapchainTexture(cmdbuf, app->window, &swapchainTexture, NULL, NULL))
+    {
+        SDL_Log("WaitAndAcquireGPUSwapchainTexture failed: %s", SDL_GetError());
+        return;
+    }
+
+	if (swapchainTexture != NULL)
+	{
+		SDL_GPUColorTargetInfo colorTargetInfo = { 0 };
+		colorTargetInfo.texture = swapchainTexture;
+		colorTargetInfo.clear_color = (SDL_FColor){ 0.0f, 0.0f, 0.0f, 1.0f };
+		colorTargetInfo.load_op = SDL_GPU_LOADOP_CLEAR;
+		colorTargetInfo.store_op = SDL_GPU_STOREOP_STORE;
+
+		/*SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, NULL);
+		SDL_BindGPUGraphicsPipeline(renderPass, app->pipeline.fillPipeline);
+		SDL_SetGPUViewport(renderPass, &app->pipeline.viewPort);
+		//SDL_DrawGPUPrimitives(renderPass, 3, 1, 0, 0);
+		SDL_EndGPURenderPass(renderPass);*/
+	}
+
+	SDL_SubmitGPUCommandBuffer(cmdbuf);
 }

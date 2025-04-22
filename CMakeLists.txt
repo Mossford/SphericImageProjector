@@ -15,9 +15,11 @@ if ((APPLE AND NOT CMAKE_SYSTEM_NAME MATCHES "Darwin") OR EMSCRIPTEN)
     set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "")    # Disable shared builds on platforms where it does not make sense to use them
     set(SDL_SHARED OFF)
     set(BUILD_SHARED_LIBS OFF)
+    set(SPIRV_CROSS_SHARED OFF)
 else()
     set(SDL_SHARED ON)
     set(BUILD_SHARED_LIBS ON)
+    set(SPIRV_CROSS_SHARED ON)
 endif()
 
 if(MSVC)
@@ -35,6 +37,8 @@ add_executable(${EXECUTABLE_NAME})
 target_sources(${EXECUTABLE_NAME} 
 PRIVATE 
     src/main.cpp
+    src/mesh.cpp
+    src/shader.cpp
 )
 
 # Set C++ version
@@ -47,6 +51,10 @@ endif()
 
 set(GLM_BUILD_TESTS OFF)
 add_subdirectory(glm EXCLUDE_FROM_ALL)
+
+set(SDLSHADERCROSS_CLI OFF)
+set(SDLSHADERCROSS_DXC OFF)
+add_subdirectory(SDL_shadercross EXCLUDE_FROM_ALL)
 
 # Configure SDL by calling its CMake file.
 # we use EXCLUDE_FROM_ALL so that its install targets and configs don't
@@ -71,6 +79,7 @@ target_link_libraries(${EXECUTABLE_NAME} PUBLIC
 	SDL3_image::SDL3_image	# remove if you are not using SDL_image
     SDL3::SDL3              # If using satelite libraries, SDL must be the last item in the list. 
     glm::glm
+    SDL3_shadercross::SDL3_shadercross
 )
 
 target_compile_definitions(${EXECUTABLE_NAME} PUBLIC SDL_MAIN_USE_CALLBACKS)
@@ -97,6 +106,8 @@ else()
 
     copy_helper("Inter-VariableFont.ttf")
     copy_helper("M51.png")
+    copy_helper("default.frag")
+    copy_helper("default.vert")
 
 endif()
 

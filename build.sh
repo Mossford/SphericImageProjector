@@ -3,4 +3,4 @@
 cmake -B "build/`uname`" -S .
 cd "build/`uname`"
 make -j8
-./SphericImageProjector
+gdb -ex run ./SphericImageProjector
