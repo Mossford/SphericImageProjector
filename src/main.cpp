@@ -7,18 +7,11 @@
 #include <string_view>
 #include <filesystem>
 
+#include "app.hpp"
 #include "mesh.hpp"
 
 constexpr uint32_t windowStartWidth = 1920;
 constexpr uint32_t windowStartHeight = 1080;
-
-struct AppContext {
-    SDL_Window* window;
-    SDL_Renderer* renderer;
-    SDL_Texture* messageTex, *imageTex;
-    SDL_FRect messageDest;
-    SDL_AppResult app_quit = SDL_APP_CONTINUE;
-};
 
 SDL_AppResult SDL_Fail()
 {
@@ -28,31 +21,36 @@ SDL_AppResult SDL_Fail()
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 {
-    if (not SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO))
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO))
     {
         return SDL_Fail();
     }
     
-    if (not TTF_Init())
-     {
+    if (!TTF_Init())
+    {
         return SDL_Fail();
     }
-    
    
     SDL_Window* window = SDL_CreateWindow("SphericImageProjector", windowStartWidth, windowStartHeight, SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
-    if (not window)
+    if (!window)
     {
         return SDL_Fail();
     }
     
     SDL_Renderer* renderer = SDL_CreateRenderer(window, NULL);
-    if (not renderer)
+    if (!renderer)
+    {
+        return SDL_Fail();
+    }
+
+    SDL_GPUDevice* gpuDevice = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, false, NULL);
+    if(!gpuDevice)
     {
         return SDL_Fail();
     }
     
     const char* basePathPtr = SDL_GetBasePath();
-    if (not basePathPtr)
+    if (!basePathPtr)
     {
         return SDL_Fail();
     }
@@ -60,30 +58,16 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 
     const auto fontPath = basePath / "Inter-VariableFont.ttf";
     TTF_Font* font = TTF_OpenFont(fontPath.string().c_str(), 36);
-    if (not font)
+    if (!font)
     {
         return SDL_Fail();
     }
-
-    const std::string_view text = "Test";
-    SDL_Surface* surfaceMessage = TTF_RenderText_Solid(font, text.data(), text.length(), { 255,255,255 });
-
-    SDL_Texture* messageTex = SDL_CreateTextureFromSurface(renderer, surfaceMessage);
-
     TTF_CloseFont(font);
-    SDL_DestroySurface(surfaceMessage);
 
-    SDL_Surface* svg_surface = IMG_Load((basePath / "M51.png").string().c_str());
-    SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, svg_surface);
-    SDL_DestroySurface(svg_surface);
-    
-    SDL_PropertiesID messageTexProps = SDL_GetTextureProperties(messageTex);
-    SDL_FRect text_rect{
-            .x = windowStartWidth / 2,
-            .y = windowStartHeight / 2,
-            .w = float(SDL_GetNumberProperty(messageTexProps, SDL_PROP_TEXTURE_WIDTH_NUMBER, 0)),
-            .h = float(SDL_GetNumberProperty(messageTexProps, SDL_PROP_TEXTURE_HEIGHT_NUMBER, 0))
-    };
+    if(!SDL_ClaimWindowForGPUDevice(gpuDevice, window))
+    {
+        return SDL_Fail();
+    }
     
     SDL_ShowWindow(window);
     {
@@ -92,14 +76,28 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
         SDL_GetWindowSizeInPixels(window, &bbwidth, &bbheight);
     }
 
-    *appstate = new AppContext{
+    SDL_GPUGraphicsPipelineCreateInfo pipelineCreateInfo =
+    {
+		.target_info =
+        {
+			.num_color_targets = 1,
+			.color_target_descriptions = (SDL_GPUColorTargetDescription[])
+            {{
+				.format = SDL_GetGPUSwapchainTextureFormat(gpuDevice, window)
+			}},
+		},
+		.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST,
+		.vertex_shader = vertexShader,
+		.fragment_shader = fragmentShader,
+	};
+
+    *appstate = new AppContext
+    {
        .window = window,
-       .renderer = renderer,
-       .messageTex = messageTex,
-       .imageTex = tex,
-       .messageDest = text_rect,
+       .gpuDevice = gpuDevice,
+       .basePath = basePath.string().c_str(),
     };
-    
+
     SDL_SetRenderVSync(renderer, -1);
 
     return SDL_APP_CONTINUE;
@@ -107,9 +105,10 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 
 SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event* event)
  {
-    auto* app = (AppContext*)appstate;
+    AppContext* app = (AppContext*)appstate;
     
-    if (event->type == SDL_EVENT_QUIT) {
+    if (event->type == SDL_EVENT_QUIT)
+    {
         app->app_quit = SDL_APP_SUCCESS;
     }
 
@@ -119,12 +118,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event* event)
 SDL_AppResult SDL_AppIterate(void *appstate)
 {
     AppContext* app = (AppContext*)appstate;
-    SDL_RenderClear(app->renderer);
-
-    SDL_RenderTexture(app->renderer, app->imageTex, NULL, NULL);
-    SDL_RenderTexture(app->renderer, app->messageTex, NULL, &app->messageDest);
-
-    SDL_RenderPresent(app->renderer);
+    
 
     return app->app_quit;
 }
@@ -134,9 +128,9 @@ void SDL_AppQuit(void* appstate, SDL_AppResult result)
     AppContext* app = (AppContext*)appstate;
     if (app)
     {
-        SDL_DestroyRenderer(app->renderer);
+        SDL_ReleaseWindowFromGPUDevice(app->gpuDevice, app->window);
         SDL_DestroyWindow(app->window);
-
+        SDL_DestroyGPUDevice(app->gpuDevice);
         delete app;
     }
     

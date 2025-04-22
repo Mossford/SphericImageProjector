@@ -19,7 +19,7 @@ public:
     SDL_GPUShader* shader;
     Shader();
     ~Shader();
-    void CompileShader(std::string location);
+    void CompileShader(std::string location, SDL_GPUDevice* device, Uint32 samplerCount, Uint32 uniformBufferCount, Uint32 storageBufferCount, Uint32 storageTextureCount);
     void setBool(std::string name, bool value);
     void setInt(std::string name, int value);
     void setFloat(std::string name, float value);

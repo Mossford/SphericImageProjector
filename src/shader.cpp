@@ -10,7 +10,7 @@ Shader::~Shader()
     
 }
 
-void Shader::CompileShader(std::string location, SDL_GPUDevice* device, Uint32 uniformBufferCount, Uint32 storageBufferCount, Uint32 storageTextureCount)
+void Shader::CompileShader(std::string location, SDL_GPUDevice* device, Uint32 samplerCount, Uint32 uniformBufferCount, Uint32 storageBufferCount, Uint32 storageTextureCount)
 {
     const char *vertCodearr = location.c_str();
 
@@ -66,8 +66,9 @@ void Shader::CompileShader(std::string location, SDL_GPUDevice* device, Uint32 u
 		return;
 	}
 
-	SDL_GPUShaderCreateInfo shaderInfo = {
-		.code = code,
+	SDL_GPUShaderCreateInfo shaderInfo =
+	{
+		.code = (Uint8*)code,
 		.code_size = codeSize,
 		.entrypoint = entrypoint,
 		.format = format,
