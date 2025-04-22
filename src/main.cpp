@@ -7,8 +7,10 @@
 #include <string_view>
 #include <filesystem>
 
-constexpr uint32_t windowStartWidth = 3840;
-constexpr uint32_t windowStartHeight = 2160;
+#include "mesh.hpp"
+
+constexpr uint32_t windowStartWidth = 1920;
+constexpr uint32_t windowStartHeight = 1080;
 
 struct AppContext {
     SDL_Window* window;
@@ -75,7 +77,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
     SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, svg_surface);
     SDL_DestroySurface(svg_surface);
     
-    auto messageTexProps = SDL_GetTextureProperties(messageTex);
+    SDL_PropertiesID messageTexProps = SDL_GetTextureProperties(messageTex);
     SDL_FRect text_rect{
             .x = windowStartWidth / 2,
             .y = windowStartHeight / 2,
@@ -115,7 +117,7 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event* event)
 }
 
 SDL_AppResult SDL_AppIterate(void *appstate)
- {
+{
     AppContext* app = (AppContext*)appstate;
     SDL_RenderClear(app->renderer);
 
@@ -128,7 +130,7 @@ SDL_AppResult SDL_AppIterate(void *appstate)
 }
 
 void SDL_AppQuit(void* appstate, SDL_AppResult result)
- {
+{
     AppContext* app = (AppContext*)appstate;
     if (app)
     {
