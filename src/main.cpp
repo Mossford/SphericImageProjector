@@ -6,12 +6,15 @@
 #include <cmath>
 #include <string_view>
 #include <filesystem>
+#include <glslang/Include/glslang_c_interface.h>
+#include <glslang/Public/resource_limits_c.h>
 
 #include "app.hpp"
 #include "mesh.hpp"
 #include "vertex.hpp"
 
 void Draw(AppContext* app);
+SDL_GPUBuffer* VertexBuffer;
 
 SDL_AppResult SDL_Fail()
 {
@@ -34,12 +37,6 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
    
     SDL_Window* window = SDL_CreateWindow("SphericImageProjector", windowStartWidth, windowStartHeight, SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
     if (!window)
-    {
-        return SDL_Fail();
-    }
-    
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, NULL);
-    if (!renderer)
     {
         return SDL_Fail();
     }
@@ -77,9 +74,13 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
         SDL_GetWindowSizeInPixels(window, &bbwidth, &bbheight);
     }
 
+    glslang_initialize_process();
+
     GpuPipeline gpuPipeline;
-    gpuPipeline.vertexShader.CompileShader(basePath.string() + "default.vert", gpuDevice, 0, 0, 0, 0);
-    gpuPipeline.fragmentShader.CompileShader(basePath.string() + "default.frag", gpuDevice, 0, 0, 0, 0);
+    gpuPipeline.vertexShader.CompileShader(basePath.string() + "default2.vert", gpuDevice, 0, 0, 0, 0);
+    gpuPipeline.fragmentShader.CompileShader(basePath.string() + "default2.frag", gpuDevice, 0, 0, 0, 0);
+
+    glslang_finalize_process();
 
     gpuPipeline.pipelineCreateInfo =
     {
@@ -89,7 +90,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
             .vertex_buffer_descriptions = (SDL_GPUVertexBufferDescription[])
             {{
 				.slot = 0,
-                .pitch = sizeof(Vertex),
+                .pitch = sizeof(float) * 3,
 				.input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX,
 				.instance_step_rate = 0,
 			}},
@@ -100,20 +101,8 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 				.buffer_slot = 0,
 				.format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3,
 				.offset = 0
-			}, 
-            {
-                .location = 1,
-				.buffer_slot = 0,
-				.format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3,
-				.offset = sizeof(float) * 3
-			},
-            {
-                .location = 2,
-                .buffer_slot = 0,
-				.format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2,
-				.offset = sizeof(float) * 2
-            }},
-            .num_vertex_attributes = 3,
+			}},
+            .num_vertex_attributes = 1,
 		},
 		.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST,
         .target_info =
@@ -144,10 +133,41 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
        .pipeline = gpuPipeline,
     };
 
-    SDL_SetRenderVSync(renderer, -1);
-
     SDL_ReleaseGPUShader(gpuDevice, gpuPipeline.fragmentShader.shader);
     SDL_ReleaseGPUShader(gpuDevice, gpuPipeline.vertexShader.shader);
+
+    SDL_GPUBufferCreateInfo bufferCreateInfo = {.usage = SDL_GPU_BUFFERUSAGE_VERTEX, .size = sizeof(glm::vec3) * 3};
+    SDL_GPUTransferBufferCreateInfo bufferTransferInfo = {.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD, .size = sizeof(glm::vec3) * 3};
+
+    VertexBuffer = SDL_CreateGPUBuffer(gpuDevice, &bufferCreateInfo);
+    if(!VertexBuffer)
+    {
+        return SDL_Fail();
+    }
+
+	// To get data into the vertex buffer, we have to use a transfer buffer
+	SDL_GPUTransferBuffer* transferBuffer = SDL_CreateGPUTransferBuffer(gpuDevice, &bufferTransferInfo);
+
+	glm::vec3* transferData = (glm::vec3*)SDL_MapGPUTransferBuffer(gpuDevice, transferBuffer, false);
+
+	transferData[0] = glm::vec3(-1, -1, 0);
+	transferData[1] = glm::vec3(1, -1, 0);
+	transferData[2] = glm::vec3(0, 1, 0);
+
+	SDL_UnmapGPUTransferBuffer(gpuDevice, transferBuffer);
+
+	// Upload the transfer data to the vertex buffer
+	SDL_GPUCommandBuffer* uploadCmdBuf = SDL_AcquireGPUCommandBuffer(gpuDevice);
+	SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(uploadCmdBuf);
+
+    SDL_GPUTransferBufferLocation bufferTransferLocation = {.transfer_buffer = transferBuffer, .offset = 0};
+    SDL_GPUBufferRegion bufferRegion = {.buffer = VertexBuffer, .offset = 0, .size = sizeof(glm::vec3) * 3};
+
+	SDL_UploadToGPUBuffer(copyPass, &bufferTransferLocation, &bufferRegion, false);
+
+	SDL_EndGPUCopyPass(copyPass);
+	SDL_SubmitGPUCommandBuffer(uploadCmdBuf);
+	SDL_ReleaseGPUTransferBuffer(gpuDevice, transferBuffer);
 
     return SDL_APP_CONTINUE;
 }
@@ -208,15 +228,19 @@ void Draw(AppContext* app)
 	{
 		SDL_GPUColorTargetInfo colorTargetInfo = { 0 };
 		colorTargetInfo.texture = swapchainTexture;
-		colorTargetInfo.clear_color = (SDL_FColor){ 0.0f, 0.0f, 0.0f, 1.0f };
+		colorTargetInfo.clear_color = (SDL_FColor){ 1.0f, 0.0f, 0.0f, 1.0f };
 		colorTargetInfo.load_op = SDL_GPU_LOADOP_CLEAR;
 		colorTargetInfo.store_op = SDL_GPU_STOREOP_STORE;
 
-		/*SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, NULL);
+        SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, NULL);
+
+        SDL_GPUBufferBinding bufferBinding = { .buffer = VertexBuffer, .offset = 0 };
+
 		SDL_BindGPUGraphicsPipeline(renderPass, app->pipeline.fillPipeline);
-		SDL_SetGPUViewport(renderPass, &app->pipeline.viewPort);
-		//SDL_DrawGPUPrimitives(renderPass, 3, 1, 0, 0);
-		SDL_EndGPURenderPass(renderPass);*/
+		SDL_BindGPUVertexBuffers(renderPass, 0, &bufferBinding, 1);
+		SDL_DrawGPUPrimitives(renderPass, 3, 1, 0, 0);
+
+		SDL_EndGPURenderPass(renderPass);
 	}
 
 	SDL_SubmitGPUCommandBuffer(cmdbuf);

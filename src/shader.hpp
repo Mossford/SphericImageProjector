@@ -7,6 +7,8 @@
 #include <typeinfo>
 #include <cstring>
 #include <string>
+#include <glslang/Include/glslang_c_interface.h>
+#include <glslang/Public/resource_limits_c.h>
 
 class Shader
 {
@@ -18,7 +20,6 @@ public:
 
     SDL_GPUShader* shader;
     Shader();
-    ~Shader();
     void CompileShader(std::string location, SDL_GPUDevice* device, Uint32 samplerCount, Uint32 uniformBufferCount, Uint32 storageBufferCount, Uint32 storageTextureCount);
     void setBool(std::string name, bool value);
     void setInt(std::string name, int value);
@@ -32,3 +33,5 @@ public:
     void setMat4(std::string name, glm::mat4 mat);
     
 };
+
+SDL_GPUShader* CompileShaderProgram(std::string location, SDL_GPUDevice* device, Uint32 samplerCount, Uint32 uniformBufferCount, Uint32 storageBufferCount, Uint32 storageTextureCount);

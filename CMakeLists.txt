@@ -8,6 +8,8 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 # prevent installing to system directories. 
 set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}" CACHE INTERNAL "")
 
+set(CMAKE_BUILD_TYPE "Release")
+
 # Declare the project
 project(SphericImageProjector)
 
@@ -15,11 +17,9 @@ if ((APPLE AND NOT CMAKE_SYSTEM_NAME MATCHES "Darwin") OR EMSCRIPTEN)
     set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "")    # Disable shared builds on platforms where it does not make sense to use them
     set(SDL_SHARED OFF)
     set(BUILD_SHARED_LIBS OFF)
-    set(SPIRV_CROSS_SHARED OFF)
 else()
     set(SDL_SHARED ON)
     set(BUILD_SHARED_LIBS ON)
-    set(SPIRV_CROSS_SHARED ON)
 endif()
 
 if(MSVC)
@@ -42,7 +42,7 @@ PRIVATE
 )
 
 # Set C++ version
-target_compile_features(${EXECUTABLE_NAME} PUBLIC cxx_std_20)
+target_compile_features(${EXECUTABLE_NAME} PUBLIC cxx_std_17)
 
 # on Web targets, we need CMake to generate a HTML webpage. 
 if(EMSCRIPTEN)
@@ -53,6 +53,8 @@ set(GLM_BUILD_TESTS OFF)
 add_subdirectory(glm EXCLUDE_FROM_ALL)
 
 set(ENABLE_HLSL OFF)
+set(GLSLANG_TESTS_DEFAULT OFF)
+set(GLSLANG_ENABLE_INSTALL_DEFAULT OFF)
 add_subdirectory(glslang EXCLUDE_FROM_ALL)
 
 # Configure SDL by calling its CMake file.
@@ -78,7 +80,9 @@ target_link_libraries(${EXECUTABLE_NAME} PUBLIC
 	SDL3_image::SDL3_image	# remove if you are not using SDL_image
     SDL3::SDL3              # If using satelite libraries, SDL must be the last item in the list. 
     glm::glm
-    glslang::glslang
+    glslang::glslang 
+    glslang::SPIRV 
+    glslang::glslang-default-resource-limits
 )
 
 target_compile_definitions(${EXECUTABLE_NAME} PUBLIC SDL_MAIN_USE_CALLBACKS)
