@@ -13,6 +13,7 @@ struct GpuPipeline
     SDL_GPUViewport viewPort;
     Shader vertexShader;
     Shader fragmentShader;
+    SDL_GPUBuffer* vertexBuffer;
 };
 
 struct AppContext

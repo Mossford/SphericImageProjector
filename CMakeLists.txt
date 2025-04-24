@@ -85,8 +85,6 @@ target_link_libraries(${EXECUTABLE_NAME} PUBLIC
     glslang::glslang-default-resource-limits
 )
 
-target_compile_definitions(${EXECUTABLE_NAME} PUBLIC SDL_MAIN_USE_CALLBACKS)
-
 # Dealing with assets
 # We have some non-code resources that our application needs in order to work. How we deal with those differs per platform.
 if(EMSCRIPTEN)

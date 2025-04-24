@@ -4,12 +4,14 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
 #include "vertex.hpp"
+#include "app.hpp"
+
+#include <SDL3/SDL.h>
 
 class Mesh
 {
 private:
-
-    unsigned int vao, vbo, ebo;
+SDL_GPUBuffer* vertexBuffer;
 
 public:
 
@@ -23,9 +25,9 @@ public:
     Mesh();
     Mesh(const Mesh &other);
     Mesh(std::vector<Vertex> vertexes, std::vector<unsigned int> indices, glm::vec3 position, glm::vec3 rotation, float scale);
-    void BufferGens();
+    void BufferGens(AppContext* context);
     void ReGenBuffer();
-    void DrawMesh();
+    void DrawMesh(AppContext* context, SDL_GPURenderPass* renderPass);
     void Delete();
     void CreateModelMat();
     void CreateRotationMat();

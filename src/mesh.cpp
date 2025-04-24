@@ -7,9 +7,6 @@ Mesh::Mesh()
 
 Mesh::Mesh(const Mesh &other)
 {
-    this->vao = other.vao;
-    this->vbo = other.vbo;
-    this->ebo = other.ebo;
     this->vertexes = other.vertexes;
     this->indices = other.indices;
     this->position = other.position;
@@ -31,9 +28,44 @@ void Mesh::Delete()
     
 }
 
-void Mesh::BufferGens()
+void Mesh::BufferGens(AppContext* context)
 {
-    
+    // Create the vertex buffer
+	SDL_GPUBufferCreateInfo bufferCreateInfo = {};
+	bufferCreateInfo.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
+	bufferCreateInfo.size = sizeof(Vertex) * vertexes.size();
+
+	context->pipeline.vertexBuffer = SDL_CreateGPUBuffer(context->gpuDevice, &bufferCreateInfo);
+
+	SDL_GPUTransferBufferCreateInfo bufferTransferInfo = {};
+	bufferTransferInfo.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
+	bufferTransferInfo.size = sizeof(Vertex) * vertexes.size();
+
+	// To get data into the vertex buffer, we have to use a transfer buffer
+	SDL_GPUTransferBuffer* transferBuffer = SDL_CreateGPUTransferBuffer(context->gpuDevice, &bufferTransferInfo);
+
+	Vertex* transferData = (Vertex*)SDL_MapGPUTransferBuffer(context->gpuDevice, transferBuffer, false);
+
+	SDL_UnmapGPUTransferBuffer(context->gpuDevice, transferBuffer);
+
+	// Upload the transfer data to the vertex buffer
+	SDL_GPUCommandBuffer* uploadCmdBuf = SDL_AcquireGPUCommandBuffer(context->gpuDevice);
+	SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(uploadCmdBuf);
+
+	SDL_GPUTransferBufferLocation bufferloc = {};
+	bufferloc.transfer_buffer = transferBuffer;
+	bufferloc.offset = 0;
+
+	SDL_GPUBufferRegion bufferregion = {};
+	bufferregion.buffer = context->pipeline.vertexBuffer;
+	bufferregion.offset = 0;
+	bufferregion.size = sizeof(Vertex) * vertexes.size();
+
+	SDL_UploadToGPUBuffer(copyPass, &bufferloc, &bufferregion, false);
+
+	SDL_EndGPUCopyPass(copyPass);
+	SDL_SubmitGPUCommandBuffer(uploadCmdBuf);
+	SDL_ReleaseGPUTransferBuffer(context->gpuDevice, transferBuffer);
 }
 
 void Mesh::ReGenBuffer()
@@ -42,9 +74,13 @@ void Mesh::ReGenBuffer()
     
 }
 
-void Mesh::DrawMesh()
+void Mesh::DrawMesh(AppContext* context, SDL_GPURenderPass* renderPass)
 {
-
+    SDL_GPUBufferBinding bufBind = {};
+	bufBind.buffer = context->pipeline.vertexBuffer;
+	bufBind.offset = 0;
+	SDL_BindGPUVertexBuffers(renderPass, 0, &bufBind, 1);
+	SDL_DrawGPUPrimitives(renderPass, 3, 1, 0, 0);
 }
 
 void Mesh::CreateModelMat()
