@@ -127,7 +127,7 @@ int main()
 	SDL_ReleaseGPUShader(context.gpuDevice, vertexShader);
 	SDL_ReleaseGPUShader(context.gpuDevice, fragmentShader);
 
-	mesh = Create2DTriangle(glm::vec3(0,0,0), glm::vec3(0,0,0));
+	mesh = CreateSphereMesh(glm::vec3(0,0,0), glm::vec3(0,0,0), 4);
 	mesh.BufferGens(&context);
 
 
