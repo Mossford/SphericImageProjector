@@ -63,8 +63,8 @@ int main()
 	// Create the shaders
 	glslang_initialize_process();
 
-	SDL_GPUShader* vertexShader = CompileShaderProgram(context.basePath, "default.vert", context.gpuDevice, 0, 0, 0, 0);
-	SDL_GPUShader* fragmentShader = CompileShaderProgram(context.basePath, "default.frag", context.gpuDevice, 0, 0, 0, 0);
+	SDL_GPUShader* vertexShader = CompileShaderProgram(context.basePath, "default2.vert", context.gpuDevice, 0, 0, 0, 0);
+	SDL_GPUShader* fragmentShader = CompileShaderProgram(context.basePath, "default2.frag", context.gpuDevice, 0, 0, 0, 0);
 
 	glslang_finalize_process();
 
@@ -87,13 +87,13 @@ int main()
 	vertexAttributes[1].location = 1;
 	vertexAttributes[1].buffer_slot = 0;
 	vertexAttributes[1].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3;
-	vertexAttributes[1].offset = sizeof(glm::vec3);
+	vertexAttributes[1].offset = offsetof(Vertex, normal);
 
 	vertexAttributes[2] = {};
 	vertexAttributes[2].location = 2;
 	vertexAttributes[2].buffer_slot = 0;
 	vertexAttributes[2].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;
-	vertexAttributes[2].offset = sizeof(glm::vec3) * 2;
+	vertexAttributes[2].offset = offsetof(Vertex, uv);
 
 	SDL_GPUVertexInputState vertexInputState = {};
 	vertexInputState.vertex_buffer_descriptions = vertexBufferDescriptions;
@@ -126,6 +126,10 @@ int main()
 
 	SDL_ReleaseGPUShader(context.gpuDevice, vertexShader);
 	SDL_ReleaseGPUShader(context.gpuDevice, fragmentShader);
+
+	mesh = Create2DTriangle(glm::vec3(0,0,0), glm::vec3(0,0,0));
+	mesh.BufferGens(&context);
+
 
 	while (!quit)
 	{
@@ -183,6 +187,7 @@ void Draw()
 		SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, NULL);
 		SDL_BindGPUGraphicsPipeline(renderPass, context.pipeline.fillPipeline);
 		
+		mesh.DrawMesh(&context, renderPass);
 
 		SDL_EndGPURenderPass(renderPass);
 	}
@@ -194,7 +199,7 @@ void Draw()
 void Quit()
 {
 	SDL_ReleaseGPUGraphicsPipeline(context.gpuDevice, context.pipeline.fillPipeline);
-	SDL_ReleaseGPUBuffer(context.gpuDevice, context.pipeline.vertexBuffer);
+	mesh.Delete(&context);
     SDL_ReleaseWindowFromGPUDevice(context.gpuDevice, context.window);
     SDL_DestroyWindow(context.window);
     SDL_DestroyGPUDevice(context.gpuDevice);

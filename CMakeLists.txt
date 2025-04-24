@@ -52,7 +52,6 @@ endif()
 set(GLM_BUILD_TESTS OFF)
 add_subdirectory(glm EXCLUDE_FROM_ALL)
 
-set(ENABLE_HLSL OFF)
 set(GLSLANG_TESTS_DEFAULT OFF)
 set(GLSLANG_ENABLE_INSTALL_DEFAULT OFF)
 add_subdirectory(glslang EXCLUDE_FROM_ALL)

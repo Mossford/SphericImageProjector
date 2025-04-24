@@ -12,6 +12,7 @@ class Mesh
 {
 private:
 SDL_GPUBuffer* vertexBuffer;
+SDL_GPUBuffer* indexBuffer;
 
 public:
 
@@ -28,7 +29,7 @@ public:
     void BufferGens(AppContext* context);
     void ReGenBuffer();
     void DrawMesh(AppContext* context, SDL_GPURenderPass* renderPass);
-    void Delete();
+    void Delete(AppContext* context);
     void CreateModelMat();
     void CreateRotationMat();
     void FixWindingOrder();
@@ -36,4 +37,5 @@ public:
     void SubdivideTriangle();
 };
 
+Mesh Create2DTriangle(glm::vec3 position, glm::vec3 rotation);
 Mesh CreateSphereMesh(glm::vec3 position, glm::vec3 rotation, unsigned int subdivideNum);

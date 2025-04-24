@@ -23,45 +23,74 @@ Mesh::Mesh(std::vector<Vertex> vertexes, std::vector<unsigned int> indices, glm:
     this->scale = scale;
 }
 
-void Mesh::Delete()
+void Mesh::Delete(AppContext* context)
 {
-    
+    SDL_ReleaseGPUBuffer(context->gpuDevice, vertexBuffer);
+    SDL_ReleaseGPUBuffer(context->gpuDevice, indexBuffer);
 }
 
 void Mesh::BufferGens(AppContext* context)
 {
     // Create the vertex buffer
-	SDL_GPUBufferCreateInfo bufferCreateInfo = {};
-	bufferCreateInfo.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
-	bufferCreateInfo.size = sizeof(Vertex) * vertexes.size();
+	SDL_GPUBufferCreateInfo bufferCreateInfoVert = {};
+	bufferCreateInfoVert.usage = SDL_GPU_BUFFERUSAGE_VERTEX;
+	bufferCreateInfoVert.size = sizeof(Vertex) * vertexes.size();
 
-	context->pipeline.vertexBuffer = SDL_CreateGPUBuffer(context->gpuDevice, &bufferCreateInfo);
+    SDL_GPUBufferCreateInfo bufferCreateInfoInd = {};
+	bufferCreateInfoVert.usage = SDL_GPU_BUFFERUSAGE_INDEX;
+	bufferCreateInfoVert.size = sizeof(Uint32) * indices.size();
+
+	vertexBuffer = SDL_CreateGPUBuffer(context->gpuDevice, &bufferCreateInfoVert);
+    indexBuffer = SDL_CreateGPUBuffer(context->gpuDevice, &bufferCreateInfoInd);
 
 	SDL_GPUTransferBufferCreateInfo bufferTransferInfo = {};
 	bufferTransferInfo.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
-	bufferTransferInfo.size = sizeof(Vertex) * vertexes.size();
+	bufferTransferInfo.size = (sizeof(Vertex) * vertexes.size()) + (sizeof(Uint32) * indices.size());
 
 	// To get data into the vertex buffer, we have to use a transfer buffer
 	SDL_GPUTransferBuffer* transferBuffer = SDL_CreateGPUTransferBuffer(context->gpuDevice, &bufferTransferInfo);
 
-	Vertex* transferData = (Vertex*)SDL_MapGPUTransferBuffer(context->gpuDevice, transferBuffer, false);
+	void* transferData = SDL_MapGPUTransferBuffer(context->gpuDevice, transferBuffer, false);
 
+    Vertex* vertexData = (Vertex*)transferData;
+    for (int i = 0; i < vertexes.size(); i++)
+    {
+        vertexData[i] = vertexes[i];
+    }
+
+    //get the offset pointer
+    Uint32* indexData = (Uint32*) transferData;
+	for (int i = vertexes.size(); i < vertexes.size() + indices.size(); i++)
+    {
+        indexData[i] = indices[i];
+    }
+    
 	SDL_UnmapGPUTransferBuffer(context->gpuDevice, transferBuffer);
 
 	// Upload the transfer data to the vertex buffer
 	SDL_GPUCommandBuffer* uploadCmdBuf = SDL_AcquireGPUCommandBuffer(context->gpuDevice);
 	SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(uploadCmdBuf);
 
-	SDL_GPUTransferBufferLocation bufferloc = {};
-	bufferloc.transfer_buffer = transferBuffer;
-	bufferloc.offset = 0;
+	SDL_GPUTransferBufferLocation bufferlocVert = {};
+	bufferlocVert.transfer_buffer = transferBuffer;
+	bufferlocVert.offset = 0;
 
-	SDL_GPUBufferRegion bufferregion = {};
-	bufferregion.buffer = context->pipeline.vertexBuffer;
-	bufferregion.offset = 0;
-	bufferregion.size = sizeof(Vertex) * vertexes.size();
+	SDL_GPUBufferRegion bufferregionVert = {};
+	bufferregionVert.buffer = vertexBuffer;
+	bufferregionVert.offset = 0;
+	bufferregionVert.size = sizeof(Vertex) * vertexes.size();
 
-	SDL_UploadToGPUBuffer(copyPass, &bufferloc, &bufferregion, false);
+    SDL_GPUTransferBufferLocation bufferlocInd = {};
+    bufferlocInd.transfer_buffer = transferBuffer;
+    bufferlocInd.offset = sizeof(Vertex) * vertexes.size();
+
+    SDL_GPUBufferRegion bufferregionInd = {};
+    bufferregionInd.buffer = indexBuffer;
+    bufferregionInd.offset = 0;
+    bufferregionInd.size = sizeof(Uint32) * indices.size();
+
+	SDL_UploadToGPUBuffer(copyPass, &bufferlocVert, &bufferregionVert, false);
+    SDL_UploadToGPUBuffer(copyPass, &bufferlocInd, &bufferregionInd, false);
 
 	SDL_EndGPUCopyPass(copyPass);
 	SDL_SubmitGPUCommandBuffer(uploadCmdBuf);
@@ -70,17 +99,21 @@ void Mesh::BufferGens(AppContext* context)
 
 void Mesh::ReGenBuffer()
 {
-    Delete();
+    
     
 }
 
 void Mesh::DrawMesh(AppContext* context, SDL_GPURenderPass* renderPass)
 {
-    SDL_GPUBufferBinding bufBind = {};
-	bufBind.buffer = context->pipeline.vertexBuffer;
-	bufBind.offset = 0;
-	SDL_BindGPUVertexBuffers(renderPass, 0, &bufBind, 1);
-	SDL_DrawGPUPrimitives(renderPass, 3, 1, 0, 0);
+    SDL_GPUBufferBinding bufBindVert = {};
+	bufBindVert.buffer = vertexBuffer;
+	bufBindVert.offset = 0;
+	SDL_BindGPUVertexBuffers(renderPass, 0, &bufBindVert, 1);
+    SDL_GPUBufferBinding bufBindInd = {};
+	bufBindInd.buffer = indexBuffer;
+	bufBindInd.offset = 0;
+    SDL_BindGPUIndexBuffer(renderPass, &bufBindInd, SDL_GPU_INDEXELEMENTSIZE_32BIT);
+	SDL_DrawGPUIndexedPrimitives(renderPass, indices.size(), 1, 0, 0, 0);
 }
 
 void Mesh::CreateModelMat()

@@ -47,14 +47,14 @@ SDL_GPUShader* CompileShaderProgram(std::string location, std::string file, SDL_
 		return NULL;
 	}
 
-	SpirVBinary bin;
+	/*SpirVBinary bin;
 	if(stage == SDL_GPU_SHADERSTAGE_VERTEX)
 		bin = compileShaderToSPIRV_Vulkan(GLSLANG_STAGE_VERTEX, (char*)code, (location + file).c_str());
 	else if (stage == SDL_GPU_SHADERSTAGE_FRAGMENT)
 		bin = compileShaderToSPIRV_Vulkan(GLSLANG_STAGE_FRAGMENT, (char*)code, (location + file).c_str());
 
 	codeSize = bin.size;
-	code = bin.words;
+	code = bin.words;*/
 
 	SDL_GPUShaderCreateInfo shaderInfo =
 	{
@@ -206,9 +206,9 @@ SpirVBinary compileShaderToSPIRV_Vulkan(glslang_stage_t stage, const char* shade
         .target_language = GLSLANG_TARGET_SPV,
         .target_language_version = GLSLANG_TARGET_SPV_1_5,
         .code = shaderSource,
-        .default_version = 100,
+        .default_version = 460,
         .default_profile = GLSLANG_NO_PROFILE,
-        .force_default_version_and_profile = false,
+        .force_default_version_and_profile = true,
         .forward_compatible = false,
         .messages = GLSLANG_MSG_DEFAULT_BIT,
 		.resource = glslang_default_resource(),
