@@ -11,6 +11,7 @@ struct GpuPipeline
     SDL_GPUGraphicsPipelineCreateInfo pipelineCreateInfo;
     SDL_GPUGraphicsPipeline* fillPipeline;
     SDL_GPUViewport viewPort;
+    SDL_GPUTexture* backBuffer;
     Shader vertexShader;
     Shader fragmentShader;
 };

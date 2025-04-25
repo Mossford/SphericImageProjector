@@ -25,8 +25,10 @@ Mesh::Mesh(std::vector<Vertex> vertexes, std::vector<unsigned int> indices, glm:
 
 void Mesh::Delete(AppContext* context)
 {
-    SDL_ReleaseGPUBuffer(context->gpuDevice, vertexBuffer);
-    SDL_ReleaseGPUBuffer(context->gpuDevice, indexBuffer);
+    if(vertexBuffer != NULL)
+        SDL_ReleaseGPUBuffer(context->gpuDevice, vertexBuffer);
+    if(indexBuffer != NULL)
+        SDL_ReleaseGPUBuffer(context->gpuDevice, indexBuffer);
 }
 
 void Mesh::BufferGens(AppContext* context)
@@ -45,7 +47,7 @@ void Mesh::BufferGens(AppContext* context)
 
 	SDL_GPUTransferBufferCreateInfo bufferTransferInfo = {};
 	bufferTransferInfo.usage = SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD;
-	bufferTransferInfo.size = sizeof(Vertex) * vertexes.size();
+	bufferTransferInfo.size = (sizeof(Vertex) * vertexes.size()) + (sizeof(Uint32) * indices.size());
 
 	// To get data into the vertex buffer, we have to use a transfer buffer
 	SDL_GPUTransferBuffer* transferBuffer = SDL_CreateGPUTransferBuffer(context->gpuDevice, &bufferTransferInfo);
@@ -102,8 +104,12 @@ void Mesh::ReGenBuffer()
     
 }
 
-void Mesh::DrawMesh(AppContext* context, SDL_GPURenderPass* renderPass)
+void Mesh::DrawMesh(AppContext* context, SDL_GPURenderPass* renderPass, SDL_GPUCommandBuffer* cmbBuf, glm::mat4 proj, glm::mat4 view)
 {
+    CreateModelMat();
+
+    glm::mat4 combineMat = proj * view * modelMatrix;
+
     SDL_GPUBufferBinding bufBindVert = {};
 	bufBindVert.buffer = vertexBuffer;
 	bufBindVert.offset = 0;
@@ -112,7 +118,7 @@ void Mesh::DrawMesh(AppContext* context, SDL_GPURenderPass* renderPass)
 	bufBindInd.buffer = indexBuffer;
 	bufBindInd.offset = 0;
     SDL_BindGPUIndexBuffer(renderPass, &bufBindInd, SDL_GPU_INDEXELEMENTSIZE_32BIT);
-    //SDL_DrawGPUPrimitives(renderPass, vertexes.size(), 1, 0, 0);
+    SDL_PushGPUVertexUniformData(cmbBuf, 0, glm::value_ptr(combineMat), sizeof(glm::mat4));
 	SDL_DrawGPUIndexedPrimitives(renderPass, indices.size(), 1, 0, 0, 0);
 }
 
@@ -213,15 +219,19 @@ void Mesh::SubdivideTriangle()
         unsigned int ia = indices[i]; 
         unsigned int ib = indices[i + 1];
         unsigned int ic = indices[i + 2]; 
+
         Vertex a = vertexes[ia];
         Vertex b = vertexes[ib];
         Vertex c = vertexes[ic];
+
         glm::vec3 ab = (a.position + b.position) * 0.5f;
         glm::vec3 bc = (b.position + c.position) * 0.5f;
         glm::vec3 ca = (c.position + a.position) * 0.5f;
+
         glm::vec3 u = bc - ab;
         glm::vec3 v = ca - ab;
         glm::vec3 normal = glm::normalize(glm::cross(u,v));
+
         ia = newVerts.size();
         newVerts.push_back(a);
         ib = newVerts.size();

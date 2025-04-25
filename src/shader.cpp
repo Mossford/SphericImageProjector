@@ -2,7 +2,7 @@
 
 struct SpirVBinary
 {
-    uint32_t *words; // SPIR-V words
+    Uint32 *words; // SPIR-V words
     int size; // number of words in SPIR-V binary
 };
 
@@ -13,7 +13,7 @@ Shader::Shader()
 
 }
 
-SDL_GPUShader* CompileShaderProgram(std::string location, std::string file, SDL_GPUDevice* device, Uint32 samplerCount, Uint32 uniformBufferCount, Uint32 storageBufferCount, Uint32 storageTextureCount)
+SDL_GPUShader* CompileShaderProgram(std::string location, std::string file, SDL_GPUDevice* device, Uint32 samplerCount, Uint32 uniformBufferCount, Uint32 storageBufferCount, Uint32 storageTextureCount, bool parse)
 {
     SDL_GPUShaderStage stage;
 	if (SDL_strstr(file.c_str(), ".vert"))
@@ -33,7 +33,7 @@ SDL_GPUShader* CompileShaderProgram(std::string location, std::string file, SDL_
 
 	SDL_GPUShaderFormat backendFormats = SDL_GetGPUShaderFormats(device);
 	SDL_GPUShaderFormat format = SDL_GPU_SHADERFORMAT_SPIRV;
-	//for hlsl this will only be main
+	//for glsl this will only be main
 	const char *entrypoint;
 	format = SDL_GPU_SHADERFORMAT_SPIRV;
 	entrypoint = "main";
@@ -47,14 +47,18 @@ SDL_GPUShader* CompileShaderProgram(std::string location, std::string file, SDL_
 		return NULL;
 	}
 
-	/*SpirVBinary bin;
-	if(stage == SDL_GPU_SHADERSTAGE_VERTEX)
-		bin = compileShaderToSPIRV_Vulkan(GLSLANG_STAGE_VERTEX, (char*)code, (location + file).c_str());
-	else if (stage == SDL_GPU_SHADERSTAGE_FRAGMENT)
-		bin = compileShaderToSPIRV_Vulkan(GLSLANG_STAGE_FRAGMENT, (char*)code, (location + file).c_str());
+	SpirVBinary bin;
+	if(parse)
+	{
+		if(stage == SDL_GPU_SHADERSTAGE_VERTEX)
+			bin = compileShaderToSPIRV_Vulkan(GLSLANG_STAGE_VERTEX, (char*)code, (location + file).c_str());
+		else if (stage == SDL_GPU_SHADERSTAGE_FRAGMENT)
+			bin = compileShaderToSPIRV_Vulkan(GLSLANG_STAGE_FRAGMENT, (char*)code, (location + file).c_str());
 
-	codeSize = bin.size;
-	code = bin.words;*/
+		//since glslang returns as uint32 we need to change it to uint8
+		codeSize = bin.size * sizeof(Uint32) / sizeof(Uint8);
+		code = bin.words;
+	}
 
 	SDL_GPUShaderCreateInfo shaderInfo =
 	{
@@ -207,7 +211,7 @@ SpirVBinary compileShaderToSPIRV_Vulkan(glslang_stage_t stage, const char* shade
         .target_language_version = GLSLANG_TARGET_SPV_1_5,
         .code = shaderSource,
         .default_version = 460,
-        .default_profile = GLSLANG_NO_PROFILE,
+        .default_profile = GLSLANG_CORE_PROFILE,
         .force_default_version_and_profile = true,
         .forward_compatible = false,
         .messages = GLSLANG_MSG_DEFAULT_BIT,
@@ -258,7 +262,7 @@ SpirVBinary compileShaderToSPIRV_Vulkan(glslang_stage_t stage, const char* shade
     glslang_program_SPIRV_generate(program, stage);
 
     bin.size = glslang_program_SPIRV_get_size(program);
-    bin.words = (uint32_t*)malloc(bin.size * sizeof(uint32_t));
+	bin.words = new Uint32[bin.size];
     glslang_program_SPIRV_get(program, bin.words);
 
     const char* spirv_messages = glslang_program_SPIRV_get_messages(program);

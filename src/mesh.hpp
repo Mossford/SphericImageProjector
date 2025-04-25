@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <vector>
 #include "vertex.hpp"
 #include "app.hpp"
@@ -28,7 +29,7 @@ public:
     Mesh(std::vector<Vertex> vertexes, std::vector<unsigned int> indices, glm::vec3 position, glm::vec3 rotation, float scale);
     void BufferGens(AppContext* context);
     void ReGenBuffer();
-    void DrawMesh(AppContext* context, SDL_GPURenderPass* renderPass);
+    void DrawMesh(AppContext* context, SDL_GPURenderPass* renderPass, SDL_GPUCommandBuffer* cmbBuf, glm::mat4 proj, glm::mat4 view);
     void Delete(AppContext* context);
     void CreateModelMat();
     void CreateRotationMat();
