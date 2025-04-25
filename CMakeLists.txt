@@ -41,6 +41,7 @@ PRIVATE
     src/shader.cpp
     src/camera.cpp
     src/math.cpp
+    src/pipeline.cpp
 )
 
 # Set C++ version

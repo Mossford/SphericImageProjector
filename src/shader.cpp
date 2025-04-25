@@ -88,14 +88,14 @@ SDL_GPUShader* CompileShaderProgram(std::string location, std::string file, SDL_
 	return shader;
 }
 
-void Shader::CompileShader(std::string location, std::string file, SDL_GPUDevice* device, Uint32 samplerCount, Uint32 uniformBufferCount, Uint32 storageBufferCount, Uint32 storageTextureCount)
+void Shader::CompileShader(std::string location, SDL_GPUDevice* device, ShaderSettings settings, bool parse)
 {
     SDL_GPUShaderStage stage;
-	if (SDL_strstr(file.c_str(), ".vert"))
+	if (SDL_strstr(settings.file.c_str(), ".vert"))
 	{
 		stage = SDL_GPU_SHADERSTAGE_VERTEX;
 	}
-	else if (SDL_strstr(file.c_str(), ".frag"))
+	else if (SDL_strstr(settings.file.c_str(), ".frag"))
 	{
 		stage = SDL_GPU_SHADERSTAGE_FRAGMENT;
 	}
@@ -108,28 +108,32 @@ void Shader::CompileShader(std::string location, std::string file, SDL_GPUDevice
 
 	SDL_GPUShaderFormat backendFormats = SDL_GetGPUShaderFormats(device);
 	SDL_GPUShaderFormat format = SDL_GPU_SHADERFORMAT_SPIRV;
-	//for hlsl this will only be main
+	//for glsl this will only be main
 	const char *entrypoint;
 	format = SDL_GPU_SHADERFORMAT_SPIRV;
 	entrypoint = "main";
 
 	size_t codeSize;
-	void* code = SDL_LoadFile((location + file).c_str(), &codeSize);
+	void* code = SDL_LoadFile((location + settings.file).c_str(), &codeSize);
 	if (code == NULL)
 	{
-		SDL_Log("Failed to load shader from disk! %s", (location + file).c_str());
+		SDL_Log("Failed to load shader from disk! %s", (location + settings.file).c_str());
 		SDL_Log(SDL_GetError());
 		return;
 	}
 
 	SpirVBinary bin;
-	if(stage == SDL_GPU_SHADERSTAGE_VERTEX)
-		bin = compileShaderToSPIRV_Vulkan(GLSLANG_STAGE_VERTEX, (char*)code, (location + file).c_str());
-	else if (stage == SDL_GPU_SHADERSTAGE_FRAGMENT)
-		bin = compileShaderToSPIRV_Vulkan(GLSLANG_STAGE_FRAGMENT, (char*)code, (location + file).c_str());
+	if(parse)
+	{
+		if(stage == SDL_GPU_SHADERSTAGE_VERTEX)
+			bin = compileShaderToSPIRV_Vulkan(GLSLANG_STAGE_VERTEX, (char*)code, (location + settings.file).c_str());
+		else if (stage == SDL_GPU_SHADERSTAGE_FRAGMENT)
+			bin = compileShaderToSPIRV_Vulkan(GLSLANG_STAGE_FRAGMENT, (char*)code, (location + settings.file).c_str());
 
-	codeSize = bin.size;
-	code = bin.words;
+		//since glslang returns as uint32 we need to change it to uint8
+		codeSize = bin.size * sizeof(Uint32) / sizeof(Uint8);
+		code = bin.words;
+	}
 
 	SDL_GPUShaderCreateInfo shaderInfo =
 	{
@@ -138,10 +142,10 @@ void Shader::CompileShader(std::string location, std::string file, SDL_GPUDevice
 		.entrypoint = entrypoint,
 		.format = format,
 		.stage = stage,
-		.num_samplers = samplerCount,
-		.num_storage_textures = storageTextureCount,
-		.num_storage_buffers = storageBufferCount,
-		.num_uniform_buffers = uniformBufferCount,
+		.num_samplers = settings.samplerCount,
+		.num_storage_textures = settings.storageTextureCount,
+		.num_storage_buffers = settings.storageBufferCount,
+		.num_uniform_buffers = settings.uniformBufferCount,
 	};
 
 	SDL_GPUShader* shader = SDL_CreateGPUShader(device, &shaderInfo);

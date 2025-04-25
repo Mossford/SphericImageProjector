@@ -66,88 +66,9 @@ int main()
 		return SDL_FailCustom();
 	}
 
-	// Create the shaders
-	glslang_initialize_process();
 
-	SDL_GPUShader* vertexShader = CompileShaderProgram(context.basePath, "default.vert", context.gpuDevice, 0, 1, 0, 0, true);
-	SDL_GPUShader* fragmentShader = CompileShaderProgram(context.basePath, "default.frag", context.gpuDevice, 0, 0, 0, 0, true);
-
-	glslang_finalize_process();
-
-	// Create the pipeline
-	SDL_GPUVertexBufferDescription vertexBufferDescriptions[1];
-	vertexBufferDescriptions[0] = {};
-	vertexBufferDescriptions[0].slot = 0;
-	vertexBufferDescriptions[0].pitch = sizeof(Vertex);
-	vertexBufferDescriptions[0].input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
-	vertexBufferDescriptions[0].instance_step_rate = 0;
-
-	SDL_GPUVertexAttribute vertexAttributes[3];
-	vertexAttributes[0] = {};
-	vertexAttributes[0].location = 0;
-	vertexAttributes[0].buffer_slot = 0;
-	vertexAttributes[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3;
-	vertexAttributes[0].offset = 0;
-
-	vertexAttributes[1] = {};
-	vertexAttributes[1].location = 1;
-	vertexAttributes[1].buffer_slot = 0;
-	vertexAttributes[1].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3;
-	vertexAttributes[1].offset = offsetof(Vertex, normal);
-
-	vertexAttributes[2] = {};
-	vertexAttributes[2].location = 2;
-	vertexAttributes[2].buffer_slot = 0;
-	vertexAttributes[2].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;
-	vertexAttributes[2].offset = offsetof(Vertex, uv);
-
-	SDL_GPUVertexInputState vertexInputState = {};
-	vertexInputState.vertex_buffer_descriptions = vertexBufferDescriptions;
-	vertexInputState.num_vertex_buffers = 1;
-	vertexInputState.vertex_attributes = vertexAttributes;
-	vertexInputState.num_vertex_attributes = 3;
-
-	SDL_GPUColorTargetDescription colorTargetDescriptions[1];
-	colorTargetDescriptions[0] = {};
-	colorTargetDescriptions[0].format = SDL_GetGPUSwapchainTextureFormat(context.gpuDevice, context.window);
-
-	SDL_GPUGraphicsPipelineTargetInfo targetInfo = {};
-	targetInfo.color_target_descriptions = colorTargetDescriptions;
-	targetInfo.num_color_targets = 1;
-	targetInfo.has_depth_stencil_target = true;
-	targetInfo.depth_stencil_format = SDL_GPU_TEXTUREFORMAT_D24_UNORM;
-
-	SDL_GPUDepthStencilState depthStencil = {};
-	depthStencil.enable_depth_test = true;
-	depthStencil.enable_depth_write = true;
-	depthStencil.enable_stencil_test = false;
-	depthStencil.compare_op = SDL_GPU_COMPAREOP_LESS;
-	depthStencil.write_mask = 0xFF;
-
-	SDL_GPURasterizerState rasterizerState = {};
-	rasterizerState.cull_mode = SDL_GPU_CULLMODE_NONE;
-	rasterizerState.fill_mode = SDL_GPU_FILLMODE_FILL;
-	rasterizerState.front_face = SDL_GPU_FRONTFACE_COUNTER_CLOCKWISE;
-
-	SDL_GPUGraphicsPipelineCreateInfo pipelineCreateInfo = {};
-	pipelineCreateInfo.vertex_shader = vertexShader;
-	pipelineCreateInfo.fragment_shader = fragmentShader;
-	pipelineCreateInfo.vertex_input_state = vertexInputState;
-	pipelineCreateInfo.primitive_type = SDL_GPU_PRIMITIVETYPE_TRIANGLELIST;
-	pipelineCreateInfo.target_info = targetInfo;
-	pipelineCreateInfo.depth_stencil_state = depthStencil;
-	pipelineCreateInfo.rasterizer_state = rasterizerState;
-
-	context.pipeline.fillPipeline = SDL_CreateGPUGraphicsPipeline(context.gpuDevice, &pipelineCreateInfo);
-	if (!context.pipeline.fillPipeline)
-	{
-		SDL_Log("Failed to create pipeline!");
-		return SDL_FailCustom();
-	}
-
-
-	SDL_ReleaseGPUShader(context.gpuDevice, vertexShader);
-	SDL_ReleaseGPUShader(context.gpuDevice, fragmentShader);
+	context.defaultPipeline.Initalize(ShaderSettings("default.vert", 0, 1, 0, 0), ShaderSettings("default.frag", 0, 0, 0, 0));
+	context.defaultPipeline.CreatePipeline(&context);
 
 
 	SDL_GPUTextureCreateInfo textureInfo = {};
@@ -160,7 +81,7 @@ int main()
 	textureInfo.format = SDL_GPU_TEXTUREFORMAT_D16_UNORM;
 	textureInfo.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET;
 
-	context.pipeline.backBuffer = SDL_CreateGPUTexture(context.gpuDevice, &textureInfo);
+	context.backBuffer = SDL_CreateGPUTexture(context.gpuDevice, &textureInfo);
 
 
 	mesh = CreateSphereMesh(glm::vec3(3,0,0), glm::vec3(0,0,0), 3);
@@ -257,7 +178,7 @@ void Draw()
 		colorTargetInfo.store_op = SDL_GPU_STOREOP_STORE;
 
 		SDL_GPUDepthStencilTargetInfo depthStencilTargetInfo = {};
-		depthStencilTargetInfo.texture = context.pipeline.backBuffer;
+		depthStencilTargetInfo.texture = context.backBuffer;
         depthStencilTargetInfo.cycle = true;
         depthStencilTargetInfo.clear_depth = true;
         depthStencilTargetInfo.clear_stencil = true;
@@ -267,7 +188,7 @@ void Draw()
         depthStencilTargetInfo.stencil_store_op = SDL_GPU_STOREOP_STORE;
 
 		SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, &depthStencilTargetInfo);
-		SDL_BindGPUGraphicsPipeline(renderPass, context.pipeline.fillPipeline);
+		SDL_BindGPUGraphicsPipeline(renderPass, context.defaultPipeline.pipeline);
 
 		glm::mat4 proj = camera.GetProjMat(windowStartWidth, windowStartHeight, 0.1f, 10000.0f);
 		glm::mat4 view = camera.GetViewMat();
@@ -284,8 +205,8 @@ void Draw()
 
 void Quit()
 {
-	SDL_ReleaseGPUTexture(context.gpuDevice, context.pipeline.backBuffer);
-	SDL_ReleaseGPUGraphicsPipeline(context.gpuDevice, context.pipeline.fillPipeline);
+	SDL_ReleaseGPUTexture(context.gpuDevice, context.backBuffer);
+	SDL_ReleaseGPUGraphicsPipeline(context.gpuDevice, context.defaultPipeline.pipeline);
 	mesh.Delete(&context);
 	mesh2.Delete(&context);
     SDL_ReleaseWindowFromGPUDevice(context.gpuDevice, context.window);

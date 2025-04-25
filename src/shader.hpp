@@ -10,17 +10,32 @@
 #include <glslang/Include/glslang_c_interface.h>
 #include <glslang/Public/resource_limits_c.h>
 
+struct ShaderSettings
+{
+    std::string file;
+    Uint32 samplerCount;
+    Uint32 uniformBufferCount;
+    Uint32 storageBufferCount;
+    Uint32 storageTextureCount;
+
+    ShaderSettings() {}
+    ShaderSettings(std::string file, Uint32 samplerCount, Uint32 uniformBufferCount, Uint32 storageBufferCount, Uint32 storageTextureCount)
+    {
+        this->file = file;
+        this->samplerCount = samplerCount;
+        this->uniformBufferCount = uniformBufferCount;
+        this->storageBufferCount = storageBufferCount;
+        this->storageTextureCount = storageTextureCount;
+    }
+};
+
 class Shader
 {
-private:
-
-    unsigned int vertShaderU, fragShaderU;
-
 public:
 
     SDL_GPUShader* shader;
     Shader();
-    void CompileShader(std::string location, std::string file, SDL_GPUDevice* device, Uint32 samplerCount, Uint32 uniformBufferCount, Uint32 storageBufferCount, Uint32 storageTextureCount);
+    void CompileShader(std::string location, SDL_GPUDevice* device, ShaderSettings settings, bool parse);
     void setBool(std::string name, bool value);
     void setInt(std::string name, int value);
     void setFloat(std::string name, float value);
