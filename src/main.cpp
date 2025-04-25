@@ -29,6 +29,7 @@ int SDL_FailCustom()
 
 AppContext context;
 Mesh mesh;
+Mesh mesh2;
 Camera camera;
 float xMouse = 0;
 float yMouse = 0;
@@ -162,11 +163,15 @@ int main()
 	context.pipeline.backBuffer = SDL_CreateGPUTexture(context.gpuDevice, &textureInfo);
 
 
-	mesh = CreateSphereMesh(glm::vec3(0,0,0), glm::vec3(0,0,0), 3);
+	mesh = CreateSphereMesh(glm::vec3(3,0,0), glm::vec3(0,0,0), 3);
+	mesh.scale = 10;
 	mesh.CreateSmoothNormals();
 	mesh.BufferGens(&context);
+	mesh2 = CreateSphereMesh(glm::vec3(3,0,0), glm::vec3(0,0,0), 3);
+	mesh2.CreateSmoothNormals();
+	mesh2.BufferGens(&context);
 
-	camera = Camera(glm::vec3(0,0,-10), glm::vec3(0), glm::vec3(0), 70);
+	camera = Camera(glm::vec3(0,0,0), glm::vec3(0), glm::vec3(0), 70);
 
 	while (!quit)
 	{
@@ -207,8 +212,8 @@ int main()
 void Update()
 {
 	mesh.rotation = glm::vec3(sin(SDL_GetTicks() / 50.0f) * 3, cos(SDL_GetTicks() / 50.0f) * 3, 0);
-	camera.position = glm::vec3(sin(SDL_GetTicks() / 1000.0f) * 3.0, 0, cos(SDL_GetTicks() / 1000.0f) * 3.0);
-	camera.LookAtPos(glm::vec3(0));
+	//camera.position = glm::vec3(sin(SDL_GetTicks() / 1000.0f) * 0.5f, 0, cos(SDL_GetTicks() / 1000.0f) * 0.5f);
+	//camera.LookAtPos(glm::vec3(0));
 
 	if(lockMouse)
 	{
@@ -263,8 +268,12 @@ void Draw()
 
 		SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, &depthStencilTargetInfo);
 		SDL_BindGPUGraphicsPipeline(renderPass, context.pipeline.fillPipeline);
+
+		glm::mat4 proj = camera.GetProjMat(windowStartWidth, windowStartHeight, 0.1f, 10000.0f);
+		glm::mat4 view = camera.GetViewMat();
 		
-		mesh.DrawMesh(&context, renderPass, cmdbuf, camera.GetProjMat(windowStartWidth, windowStartHeight, 0.1f, 10000.0f), camera.GetViewMat());
+		mesh.DrawMesh(&context, renderPass, cmdbuf, proj, view);
+		mesh2.DrawMesh(&context, renderPass, cmdbuf, proj, view);
 
 		SDL_EndGPURenderPass(renderPass);
 	}
@@ -278,6 +287,7 @@ void Quit()
 	SDL_ReleaseGPUTexture(context.gpuDevice, context.pipeline.backBuffer);
 	SDL_ReleaseGPUGraphicsPipeline(context.gpuDevice, context.pipeline.fillPipeline);
 	mesh.Delete(&context);
+	mesh2.Delete(&context);
     SDL_ReleaseWindowFromGPUDevice(context.gpuDevice, context.window);
     SDL_DestroyWindow(context.window);
     SDL_DestroyGPUDevice(context.gpuDevice);
