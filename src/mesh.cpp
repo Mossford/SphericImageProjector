@@ -169,43 +169,43 @@ void Mesh::FixWindingOrder()
     }
 }
 
-//---------------------------
-//Needs fixing
-//---------------------------
 void Mesh::CreateSmoothNormals()
 {
-    for (unsigned int v = 0; v < vertexes.size(); v++)
+    for (int g = 0; g < vertexes.size(); g++)
     {
-        glm::vec3 normal;
-        for (unsigned int i = 0; i < indices.size(); i += 3)
+        glm::vec3 normal = glm::vec3(1);
+        for (int i = 0; i < indices.size(); i += 3)
         {
-            unsigned int a,b,c;
+            uint a, b, c;
             a = indices[i];
             b = indices[i + 1];
             c = indices[i + 2];
-            if(vertexes[v].position == vertexes[a].position)
+            if (vertexes[g].position == vertexes[a].position)
             {
                 glm::vec3 u = vertexes[b].position - vertexes[a].position;
                 glm::vec3 v = vertexes[c].position - vertexes[a].position;
-                glm::vec3 tmpnormal = glm::normalize(glm::cross(u,v));
-                normal += tmpnormal;
+                glm::vec3 tmpnormal = glm::normalize(glm::cross(u, v));
+                float aA = Vector3Angle(vertexes[b].position - vertexes[a].position, vertexes[c].position - vertexes[a].position);
+                normal += tmpnormal * aA;
             }
-            if(vertexes[v].position == vertexes[b].position)
+            if (vertexes[g].position == vertexes[b].position)
             {
-                glm::vec3 u = vertexes[a].position - vertexes[b].position;
-                glm::vec3 v = vertexes[c].position - vertexes[b].position;
-                glm::vec3 tmpnormal = glm::normalize(glm::cross(u,v));
-                normal += tmpnormal;
+                glm::vec3 u = vertexes[c].position - vertexes[b].position;
+                glm::vec3 v = vertexes[a].position - vertexes[b].position;
+                glm::vec3 tmpnormal = glm::normalize(glm::cross(u, v));
+                float aA = Vector3Angle(vertexes[c].position - vertexes[b].position, vertexes[a].position - vertexes[b].position);
+                normal += tmpnormal * aA;
             }
-            if(vertexes[v].position == vertexes[c].position)
+            if (vertexes[g].position == vertexes[c].position)
             {
-                glm::vec3 u = vertexes[b].position - vertexes[c].position;
-                glm::vec3 v = vertexes[a].position - vertexes[c].position;
-                glm::vec3 tmpnormal = glm::normalize(glm::cross(u,v));
-                normal += tmpnormal;
+                glm::vec3 u = vertexes[a].position - vertexes[c].position;
+                glm::vec3 v = vertexes[b].position - vertexes[c].position;
+                glm::vec3 tmpnormal = glm::normalize(glm::cross(u, v));
+                float aA = Vector3Angle(vertexes[a].position - vertexes[c].position, vertexes[b].position - vertexes[c].position);
+                normal += tmpnormal * aA;
             }
         }
-        vertexes[v].normal = glm::normalize(normal);
+        vertexes[g].normal = glm::normalize(normal);
     }
 }
  

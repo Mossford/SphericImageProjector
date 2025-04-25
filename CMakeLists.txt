@@ -40,6 +40,7 @@ PRIVATE
     src/mesh.cpp
     src/shader.cpp
     src/camera.cpp
+    src/math.cpp
 )
 
 # Set C++ version

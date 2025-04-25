@@ -6,6 +6,7 @@
 #include <vector>
 #include "vertex.hpp"
 #include "app.hpp"
+#include "math.hpp"
 
 #include <SDL3/SDL.h>
 

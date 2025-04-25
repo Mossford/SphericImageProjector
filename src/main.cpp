@@ -162,7 +162,8 @@ int main()
 	context.pipeline.backBuffer = SDL_CreateGPUTexture(context.gpuDevice, &textureInfo);
 
 
-	mesh = CreateSphereMesh(glm::vec3(0,0,0), glm::vec3(0,0,0), 4);
+	mesh = CreateSphereMesh(glm::vec3(0,0,0), glm::vec3(0,0,0), 3);
+	mesh.CreateSmoothNormals();
 	mesh.BufferGens(&context);
 
 	camera = Camera(glm::vec3(0,0,-10), glm::vec3(0), glm::vec3(0), 70);
@@ -205,8 +206,8 @@ int main()
 
 void Update()
 {
-	mesh.rotation = glm::vec3(sin(SDL_GetTicks() / 50.0f), cos(SDL_GetTicks() / 50.0f), 0);
-	camera.position = glm::vec3(sin(SDL_GetTicks() / 1000.0f) * 5, 0, cos(SDL_GetTicks() / 1000.0f) * 5);
+	mesh.rotation = glm::vec3(sin(SDL_GetTicks() / 50.0f) * 3, cos(SDL_GetTicks() / 50.0f) * 3, 0);
+	camera.position = glm::vec3(sin(SDL_GetTicks() / 1000.0f) * 3.0, 0, cos(SDL_GetTicks() / 1000.0f) * 3.0);
 	camera.LookAtPos(glm::vec3(0));
 
 	if(lockMouse)
