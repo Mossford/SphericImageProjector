@@ -5,11 +5,13 @@ layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
 layout (location = 2) in vec2 aUV;
 
-//uniform sampler2D diffuseTexture;
+layout(set = 2, binding = 0) uniform sampler2D textureSamp;
 
 void main()
 {           
-    //vec3 color = texture(diffuseTexture, fs_in.TexCoords).rgb
+    vec3 color = texture(textureSamp, aUV).rgb;
+
+    //color *= aNormal;
     
-    out_color = vec4(aNormal, 1.0);
+    out_color = vec4(color, 1.0);
 }

@@ -22,4 +22,6 @@ public:
     Pipeline();
     void Initalize(ShaderSettings vertSettings, ShaderSettings fragSettings);
     void CreatePipeline(AppContext* context);
+    void Bind(SDL_GPURenderPass* renderPass);
+    void Delete(AppContext* context);
 };

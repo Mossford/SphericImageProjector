@@ -171,10 +171,10 @@ void Mesh::FixWindingOrder()
 
 void Mesh::CreateSmoothNormals()
 {
-    for (int g = 0; g < vertexes.size(); g++)
+    for (unsigned int g = 0; g < vertexes.size(); g++)
     {
         glm::vec3 normal = glm::vec3(1);
-        for (int i = 0; i < indices.size(); i += 3)
+        for (unsigned int i = 0; i < indices.size(); i += 3)
         {
             uint a, b, c;
             a = indices[i];
@@ -208,11 +208,60 @@ void Mesh::CreateSmoothNormals()
         vertexes[g].normal = glm::normalize(normal);
     }
 }
+
+void Mesh::GenerateUv()
+{
+    if (vertexes.size() == 0) 
+        return;
+
+    float minX = vertexes[0].position.x;
+    float maxX = vertexes[0].position.x;
+    float minY = vertexes[0].position.y;
+    float maxY = vertexes[0].position.y;
+
+    for (unsigned int i = 0; i < vertexes.size(); i++)
+    {
+        minX = std::min(minX, vertexes[i].position.x);
+        maxX = std::max(maxX, vertexes[i].position.x);
+        minY = std::min(minY, vertexes[i].position.y);
+        maxY = std::max(maxY, vertexes[i].position.y);
+    }
+
+    float rangeX = maxX - minX;
+    float rangeY = maxY - minY;
+
+    if (rangeX == 0.0f) 
+        rangeX = 1.0f;
+    if (rangeY == 0.0f) 
+        rangeY = 1.0f;
+
+    for (unsigned int i = 0; i < vertexes.size(); i++)
+    {
+        vertexes[i].uv.x = (vertexes[i].position.x - minX) / rangeX;
+        vertexes[i].uv.y = (vertexes[i].position.y - minY) / rangeY;
+    }
+}
+
+void Mesh::GenerateSphereUv()
+{
+    //https://en.wikipedia.org/wiki/UV_mapping
+
+    for (unsigned int i = 0; i < vertexes.size(); i++)
+    {
+        vertexes[i].uv.x = 0.5f + (atan2(vertexes[i].position.z, vertexes[i].position.x));
+        vertexes[i].uv.y = 0.5f + (asin(vertexes[i].position.y));
+    }
+}
+
  
 void Mesh::SubdivideTriangle()
 {
     std::vector<unsigned int> newIndices;
     std::vector<Vertex> newVerts;
+
+    newVerts.reserve(3 * indices.size());
+    newIndices.reserve(12 * indices.size());
+
     for (unsigned int i = 0; i < indices.size(); i += 3)
     {
         //ia is the row in the vertices array
@@ -228,6 +277,10 @@ void Mesh::SubdivideTriangle()
         glm::vec3 bc = (b.position + c.position) * 0.5f;
         glm::vec3 ca = (c.position + a.position) * 0.5f;
 
+        glm::vec2 abuv = (a.uv + b.uv) * 0.5f;
+        glm::vec2 bcuv = (b.uv + c.uv) * 0.5f;
+        glm::vec2 cauv = (c.uv + a.uv) * 0.5f;
+
         glm::vec3 u = bc - ab;
         glm::vec3 v = ca - ab;
         glm::vec3 normal = glm::normalize(glm::cross(u,v));
@@ -239,11 +292,11 @@ void Mesh::SubdivideTriangle()
         ic = newVerts.size();
         newVerts.push_back(c);
         unsigned int iab = newVerts.size();
-        newVerts.push_back(Vertex(ab, normal, glm::vec2(0)));
+        newVerts.push_back(Vertex(ab, normal, abuv));
         unsigned int ibc = newVerts.size(); 
-        newVerts.push_back(Vertex(bc, normal, glm::vec2(0)));
+        newVerts.push_back(Vertex(bc, normal, bcuv));
         unsigned int ica = newVerts.size(); 
-        newVerts.push_back(Vertex(ca, normal, glm::vec2(0)));
+        newVerts.push_back(Vertex(ca, normal, cauv));
         newIndices.push_back(ia); newIndices.push_back(iab); newIndices.push_back(ica);
         newIndices.push_back(ib); newIndices.push_back(ibc); newIndices.push_back(iab);
         newIndices.push_back(ic); newIndices.push_back(ica); newIndices.push_back(ibc);
@@ -267,30 +320,14 @@ void Mesh::SubdivideTriangle()
 
 Mesh Create2DTriangle(glm::vec3 position, glm::vec3 rotation)
 {
-    std::vector<float> verts =
-    {
-        -1.0f, -1.0f, 0.0f,
-        1.0f, -1.0f, 0.0f,
-        -1.0f, 1.0f, 0.0f,
-    };
-    std::vector<float> normals =
-    {
-        0.0f,0.0f,1.0f,
-        0.0f,0.0f,1.0f,
-        0.0f,1.0f,0.0f
-    };
-    std::vector<float> uv =
-    {
-        0.0f,1.0f,
-        0.0f,1.0f,
-        0.0f,1.0f
-    };
     std::vector<Vertex> vertxes;
     Vertex tmpvertex = Vertex(glm::vec3(-1.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f));
     vertxes.push_back(tmpvertex);
     tmpvertex.position = glm::vec3(1.0f, -1.0f, 0.0f);
+    tmpvertex.uv = glm::vec2(1.0f, 0.0f);
     vertxes.push_back(tmpvertex);
     tmpvertex.position = glm::vec3(-1.0f, 1.0f, 0.0f);
+    tmpvertex.uv = glm::vec2(0.0f, 1.0f);
     vertxes.push_back(tmpvertex);
     
     std::vector<unsigned int> indices =
@@ -385,6 +422,10 @@ Mesh CreateSphereMesh(glm::vec3 position, glm::vec3 rotation, unsigned int subdi
     {
         std::vector<unsigned int> newIndices;
         std::vector<Vertex> newVerts;
+
+        newVerts.reserve(3 * indices.size());
+        newIndices.reserve(12 * indices.size());
+
         for (unsigned int i = 0; i < indices.size(); i += 3)
         {
             //Get the required vertexes

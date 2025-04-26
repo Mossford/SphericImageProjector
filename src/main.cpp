@@ -31,6 +31,7 @@ AppContext context;
 Mesh mesh;
 Mesh mesh2;
 Camera camera;
+Texture m51;
 float xMouse = 0;
 float yMouse = 0;
 bool lockMouse = false;
@@ -67,32 +68,25 @@ int main()
 	}
 
 
-	context.defaultPipeline.Initalize(ShaderSettings("default.vert", 0, 1, 0, 0), ShaderSettings("default.frag", 0, 0, 0, 0));
+	context.defaultPipeline.Initalize(ShaderSettings("default.vert", 0, 1, 0, 0), ShaderSettings("default.frag", 1, 0, 0, 0));
 	context.defaultPipeline.CreatePipeline(&context);
 
+	context.backBuffer.CreateTexture(&context, SDL_GPU_TEXTURETYPE_2D, windowStartWidth, windowStartHeight, SDL_GPU_TEXTUREFORMAT_D16_UNORM, SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET);
 
-	SDL_GPUTextureCreateInfo textureInfo = {};
-	textureInfo.type = SDL_GPU_TEXTURETYPE_2D;
-	textureInfo.width = windowStartWidth;
-	textureInfo.height = windowStartHeight;
-	textureInfo.layer_count_or_depth = 1;
-	textureInfo.num_levels = 1;
-	textureInfo.sample_count = SDL_GPU_SAMPLECOUNT_1;
-	textureInfo.format = SDL_GPU_TEXTUREFORMAT_D16_UNORM;
-	textureInfo.usage = SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET;
-
-	context.backBuffer = SDL_CreateGPUTexture(context.gpuDevice, &textureInfo);
-
+	m51.LoadFromFile(&context, "M51.png");
 
 	mesh = CreateSphereMesh(glm::vec3(3,0,0), glm::vec3(0,0,0), 3);
-	mesh.scale = 10;
+	mesh.scale = 2;
+	mesh.GenerateSphereUv();
 	mesh.CreateSmoothNormals();
 	mesh.BufferGens(&context);
-	mesh2 = CreateSphereMesh(glm::vec3(3,0,0), glm::vec3(0,0,0), 3);
+	mesh2 = CreateSphereMesh(glm::vec3(-3,0,0), glm::vec3(0,0,0), 3);
+	mesh2.scale = 2;
+	mesh2.GenerateSphereUv();
 	mesh2.CreateSmoothNormals();
 	mesh2.BufferGens(&context);
 
-	camera = Camera(glm::vec3(0,0,0), glm::vec3(0), glm::vec3(0), 70);
+	camera = Camera(glm::vec3(0,0,-3), glm::vec3(0), glm::vec3(3, 0, 0), 70);
 
 	while (!quit)
 	{
@@ -132,7 +126,8 @@ int main()
 
 void Update()
 {
-	mesh.rotation = glm::vec3(sin(SDL_GetTicks() / 50.0f) * 3, cos(SDL_GetTicks() / 50.0f) * 3, 0);
+	mesh.rotation = glm::vec3(0, SDL_GetTicks() / 500.0f, 0);
+	mesh2.rotation = glm::vec3(SDL_GetTicks() / 500.0f, 0, 0);
 	//camera.position = glm::vec3(sin(SDL_GetTicks() / 1000.0f) * 0.5f, 0, cos(SDL_GetTicks() / 1000.0f) * 0.5f);
 	//camera.LookAtPos(glm::vec3(0));
 
@@ -178,7 +173,7 @@ void Draw()
 		colorTargetInfo.store_op = SDL_GPU_STOREOP_STORE;
 
 		SDL_GPUDepthStencilTargetInfo depthStencilTargetInfo = {};
-		depthStencilTargetInfo.texture = context.backBuffer;
+		depthStencilTargetInfo.texture = context.backBuffer.texture;
         depthStencilTargetInfo.cycle = true;
         depthStencilTargetInfo.clear_depth = true;
         depthStencilTargetInfo.clear_stencil = true;
@@ -188,7 +183,8 @@ void Draw()
         depthStencilTargetInfo.stencil_store_op = SDL_GPU_STOREOP_STORE;
 
 		SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, &depthStencilTargetInfo);
-		SDL_BindGPUGraphicsPipeline(renderPass, context.defaultPipeline.pipeline);
+		context.defaultPipeline.Bind(renderPass);
+		m51.BindSampler(renderPass, 0);
 
 		glm::mat4 proj = camera.GetProjMat(windowStartWidth, windowStartHeight, 0.1f, 10000.0f);
 		glm::mat4 view = camera.GetViewMat();
@@ -205,10 +201,11 @@ void Draw()
 
 void Quit()
 {
-	SDL_ReleaseGPUTexture(context.gpuDevice, context.backBuffer);
-	SDL_ReleaseGPUGraphicsPipeline(context.gpuDevice, context.defaultPipeline.pipeline);
+	m51.Delete(&context);
+	context.backBuffer.Delete(&context);
 	mesh.Delete(&context);
 	mesh2.Delete(&context);
+	context.defaultPipeline.Delete(&context);
     SDL_ReleaseWindowFromGPUDevice(context.gpuDevice, context.window);
     SDL_DestroyWindow(context.window);
     SDL_DestroyGPUDevice(context.gpuDevice);

@@ -42,6 +42,7 @@ PRIVATE
     src/camera.cpp
     src/math.cpp
     src/pipeline.cpp
+    src/texture.cpp
 )
 
 # Set C++ version

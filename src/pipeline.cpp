@@ -102,3 +102,14 @@ void Pipeline::CreatePipeline(AppContext* context)
     this->pipelineCreateInfo = pipelineCreateInfo;
     this->pipeline = pipeline;
 }
+
+void Pipeline::Bind(SDL_GPURenderPass* renderPass)
+{
+	SDL_BindGPUGraphicsPipeline(renderPass, pipeline);
+}
+
+void Pipeline::Delete(AppContext* context)
+{
+	if(pipeline != NULL)
+		SDL_ReleaseGPUGraphicsPipeline(context->gpuDevice, pipeline);
+}

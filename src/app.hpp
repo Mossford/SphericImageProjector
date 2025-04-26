@@ -2,6 +2,7 @@
 
 #include <SDL3/SDL.h>
 #include "pipeline.hpp"
+#include "texture.hpp"
 
 const Uint32 windowStartWidth = 1920;
 const Uint32 windowStartHeight = 1080;
@@ -13,6 +14,6 @@ struct AppContext
     SDL_AppResult app_quit = SDL_APP_CONTINUE;
     const char* basePath;
     SDL_GPUViewport viewPort;
-    SDL_GPUTexture* backBuffer;
+    Texture backBuffer;
     Pipeline defaultPipeline;
 };

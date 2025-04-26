@@ -36,6 +36,8 @@ public:
     void CreateRotationMat();
     void FixWindingOrder();
     void CreateSmoothNormals();
+    void GenerateUv();
+    void GenerateSphereUv();
     void SubdivideTriangle();
 };
 
