@@ -36,13 +36,13 @@ add_executable(${EXECUTABLE_NAME})
 # Add your sources to the target
 target_sources(${EXECUTABLE_NAME} 
 PRIVATE 
-    src/main.cpp
-    src/mesh.cpp
-    src/shader.cpp
-    src/camera.cpp
-    src/math.cpp
-    src/pipeline.cpp
-    src/texture.cpp
+    ${CMAKE_SOURCE_DIR}/src/main.cpp
+    ${CMAKE_SOURCE_DIR}/src/mesh.cpp
+    ${CMAKE_SOURCE_DIR}/src/shader.cpp
+    ${CMAKE_SOURCE_DIR}/src/camera.cpp
+    ${CMAKE_SOURCE_DIR}/src/math.cpp
+    ${CMAKE_SOURCE_DIR}/src/pipeline.cpp
+    ${CMAKE_SOURCE_DIR}/src/texture.cpp
 )
 
 # Set C++ version
@@ -77,6 +77,18 @@ set(SDLIMAGE_JPEG OFF)
 set(SDLIMAGE_WEBP OFF)
 add_subdirectory(SDL_image EXCLUDE_FROM_ALL)
 
+add_library(Libs STATIC 
+    ${CMAKE_SOURCE_DIR}/imgui/imgui.cpp
+    ${CMAKE_SOURCE_DIR}/imgui/imgui_demo.cpp
+    ${CMAKE_SOURCE_DIR}/imgui/imgui_draw.cpp
+    ${CMAKE_SOURCE_DIR}/imgui/imgui_tables.cpp
+    ${CMAKE_SOURCE_DIR}/imgui/imgui_widgets.cpp
+    ${CMAKE_SOURCE_DIR}/imgui/backends/imgui_impl_sdl3.cpp
+    ${CMAKE_SOURCE_DIR}/imgui/backends/imgui_impl_sdlgpu3.cpp
+)
+
+target_include_directories(Libs PUBLIC ${CMAKE_SOURCE_DIR}/imgui)
+
 # Link SDL to our executable. This also makes its include directory available to us. 
 target_link_libraries(${EXECUTABLE_NAME} PUBLIC 
 	SDL3_ttf::SDL3_ttf      # remove if you are not using SDL_ttf
@@ -86,6 +98,7 @@ target_link_libraries(${EXECUTABLE_NAME} PUBLIC
     glslang::glslang 
     glslang::SPIRV 
     glslang::glslang-default-resource-limits
+    Libs
 )
 
 # Dealing with assets

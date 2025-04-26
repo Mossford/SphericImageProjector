@@ -1,6 +1,7 @@
 #pragma once
 
 #include <SDL3/SDL.h>
+#include <imgui.h>
 #include "pipeline.hpp"
 #include "texture.hpp"
 
@@ -16,4 +17,5 @@ struct AppContext
     SDL_GPUViewport viewPort;
     Texture backBuffer;
     Pipeline defaultPipeline;
+    ImGuiIO* imguiIO;
 };

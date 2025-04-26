@@ -8,6 +8,9 @@
 #include <filesystem>
 #include <glslang/Include/glslang_c_interface.h>
 #include <glslang/Public/resource_limits_c.h>
+#include <imgui.h>
+#include <backends/imgui_impl_sdl3.h>
+#include <backends/imgui_impl_sdlgpu3.h>
 
 #include "app.hpp"
 #include "shader.hpp"
@@ -19,6 +22,8 @@ void Update();
 void Draw();
 void Init();
 void Quit();
+void ImguiUpdate();
+void ImguiDraw(SDL_GPUCommandBuffer* cmdBuf, SDL_GPURenderPass* renderPass);
 bool quit;
 
 int SDL_FailCustom()
@@ -67,6 +72,19 @@ int main()
 		return SDL_FailCustom();
 	}
 
+	//imgui initialize
+	IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    context.imguiIO = &ImGui::GetIO();
+    context.imguiIO->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    context.imguiIO->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+	ImGui::StyleColorsDark();
+	ImGui_ImplSDL3_InitForSDLGPU(context.window);
+    ImGui_ImplSDLGPU3_InitInfo init_info = {};
+    init_info.Device = context.gpuDevice;
+    init_info.ColorTargetFormat = SDL_GetGPUSwapchainTextureFormat(context.gpuDevice, context.window);
+    init_info.MSAASamples = SDL_GPU_SAMPLECOUNT_1;
+    ImGui_ImplSDLGPU3_Init(&init_info);
 
 	context.defaultPipeline.Initalize(ShaderSettings("default.vert", 0, 1, 0, 0), ShaderSettings("default.frag", 1, 0, 0, 0));
 	context.defaultPipeline.CreatePipeline(&context);
@@ -93,6 +111,7 @@ int main()
 		SDL_Event event;
 		while (SDL_PollEvent(&event))
 		{
+			ImGui_ImplSDL3_ProcessEvent(&event);
 			if (event.type == SDL_EVENT_QUIT)
 			{
 				Quit();
@@ -148,6 +167,11 @@ void Update()
 
 void Draw()
 {
+	ImGui_ImplSDLGPU3_NewFrame();
+    ImGui_ImplSDL3_NewFrame();
+    ImGui::NewFrame();
+    ImguiUpdate();
+
 	SDL_GPUCommandBuffer* cmdbuf = SDL_AcquireGPUCommandBuffer(context.gpuDevice);
 	if (cmdbuf == NULL)
 	{
@@ -192,12 +216,46 @@ void Draw()
 		mesh.DrawMesh(&context, renderPass, cmdbuf, proj, view);
 		mesh2.DrawMesh(&context, renderPass, cmdbuf, proj, view);
 
+		ImguiDraw(cmdbuf, renderPass);
+
 		SDL_EndGPURenderPass(renderPass);
 	}
 
 	SDL_SubmitGPUCommandBuffer(cmdbuf);
 }
 
+void ImguiUpdate()
+{
+	static ImGuiWindowFlags window_flags = 0;
+    window_flags |= ImGuiWindowFlags_NoTitleBar;
+    window_flags |= ImGuiWindowFlags_MenuBar;
+
+    ImGui::Begin("SpaceTesting", nullptr, window_flags);
+
+    //needs to be io.framerate because the actal deltatime is polled too fast and the 
+    //result is hard to read
+    //ImGui::Text("Version %s", EngVer.c_str());
+    ImGui::Text("%.3f ms/frame (%.1f FPS)", (1.0f / context.imguiIO->Framerate) * 1000.0f, context.imguiIO->Framerate);
+    //ImGui::Text("%u verts, %u indices (%u tris)", vertCount, indCount, indCount / 3);
+    //ImGui::Text("DrawCall Avg: (%.1f) DC/frame, DrawCall Total (%d)", drawCallAvg, DrawCallCount);
+    ImGui::Text("Time Open %.1f minutes", (SDL_GetTicks() / (60.0f * 1000.0f)));
+    //ImGui::Text("Time taken for Update run %.2fms ", fabs(updateTime));
+    //ImGui::Text("Time taken for Fixed Update run %.2fms ", fabs(updateFixedTime));
+
+    ImGui::Spacing();
+    ImGui::DragFloat3("Player Position", glm::value_ptr(camera.position), 0.1f, -10.0f, 10.0f);
+    ImGui::DragFloat3("Player Rotation", glm::value_ptr(camera.rotation), 1.0f, -360.0f, 360.0f);
+    ImGui::SliderFloat("Cam Fov", &camera.fov, 179.9f, 0.01f);
+	ImGui::End();
+}
+
+void ImguiDraw(SDL_GPUCommandBuffer* cmdBuf, SDL_GPURenderPass* renderPass)
+{
+	ImGui::Render();
+	ImDrawData* draw_data = ImGui::GetDrawData();
+    ImGui_ImplSDLGPU3_PrepareDrawData(draw_data, cmdBuf);
+    ImGui_ImplSDLGPU3_RenderDrawData(draw_data, cmdBuf, renderPass);
+}
 
 void Quit()
 {
