@@ -125,6 +125,7 @@ else()
     copy_helper("M51.png")
     copy_helper("default.frag")
     copy_helper("default.vert")
+    copy_helper("uvCheck.jpg")
 
 endif()
 

@@ -17,6 +17,9 @@ CTestTestfile.cmake
 _deps
 CMakeUserPresets.json
 
+.kdev4
+*.kdev4
+
 *.rsuser
 *.suo
 *.user

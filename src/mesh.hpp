@@ -36,11 +36,12 @@ public:
     void CreateRotationMat();
     void FixWindingOrder();
     void CreateSmoothNormals();
-    void GenerateUv();
-    void GenerateSphereUv();
     void SubdivideTriangle();
+    void Balloon(float delta, float speed, float percentage);
 };
 
 Mesh Create2DTriangle(glm::vec3 position, glm::vec3 rotation);
 Mesh CreateCubeMesh(glm::vec3 position, glm::vec3 rotation);
 Mesh CreateSphereMesh(glm::vec3 position, glm::vec3 rotation, unsigned int subdivideNum);
+Mesh CreateCubeSphereMesh(glm::vec3 position, glm::vec3 rotation, unsigned int subdivideNum);
+Mesh CreateUvSquare(glm::vec3 position, glm::vec3 rotation, unsigned int subdivideNum);

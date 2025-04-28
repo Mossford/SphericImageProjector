@@ -29,14 +29,15 @@ bool quit;
 int SDL_FailCustom()
 {
     SDL_LogError(SDL_LOG_CATEGORY_CUSTOM, "Error %s", SDL_GetError());
-    return SDL_FailCustom();
+    return -1;
 }
 
 AppContext context;
 Mesh mesh;
-Mesh mesh2;
 Camera camera;
 Texture m51;
+float pastXMouse = 0;
+float pastYMouse = 0;
 float xMouse = 0;
 float yMouse = 0;
 bool lockMouse = false;
@@ -71,6 +72,10 @@ int main()
 		SDL_Log("GPUClaimWindow failed");
 		return SDL_FailCustom();
 	}
+	if(SDL_WindowSupportsGPUPresentMode(context.gpuDevice, context.window, SDL_GPU_PRESENTMODE_IMMEDIATE))
+	{
+		//SDL_SetGPUSwapchainParameters(context.gpuDevice, context.window, SDL_GPU_SWAPCHAINCOMPOSITION_SDR, SDL_GPU_PRESENTMODE_IMMEDIATE);
+	}
 
 	//imgui initialize
 	IMGUI_CHECKVERSION();
@@ -93,21 +98,16 @@ int main()
 
 	m51.LoadFromFile(&context, "M51.png");
 
-	mesh = CreateSphereMesh(glm::vec3(3,0,0), glm::vec3(0,0,0), 3);
-	mesh.scale = 2;
-	mesh.GenerateSphereUv();
+	mesh = CreateCubeSphereMesh(glm::vec3(0,0,0), glm::vec3(0,0,0), 5);
 	mesh.CreateSmoothNormals();
+	mesh.scale = 100;
 	mesh.BufferGens(&context);
-	mesh2 = CreateSphereMesh(glm::vec3(-3,0,0), glm::vec3(0,0,0), 3);
-	mesh2.scale = 2;
-	mesh2.GenerateSphereUv();
-	mesh2.CreateSmoothNormals();
-	mesh2.BufferGens(&context);
 
-	camera = Camera(glm::vec3(0,0,-3), glm::vec3(0), glm::vec3(3, 0, 0), 70);
+	camera = Camera(glm::vec3(0,0,0), glm::vec3(0), glm::vec3(0, 0, 0), 70);
 
 	while (!quit)
 	{
+		SDL_GetRelativeMouseState(&xMouse, &yMouse);
 		SDL_Event event;
 		while (SDL_PollEvent(&event))
 		{
@@ -117,15 +117,17 @@ int main()
 				Quit();
 				quit = true;
 			}
-			if(event.type == SDL_EVENT_MOUSE_MOTION)
+			if(event.type == SDL_EVENT_MOUSE_WHEEL)
 			{
-				xMouse = event.motion.xrel;
-				yMouse = event.motion.yrel;
+				camera.fov -= camera.fov * 0.01 * event.wheel.y;
+				camera.fov = std::min(170.0f, camera.fov);
 			}
 			if(event.type == SDL_EVENT_KEY_DOWN)
 			{
 				if(event.key.key == SDLK_ESCAPE)
 				{
+					pastXMouse = xMouse;
+					pastYMouse = yMouse;
 					lockMouse = !lockMouse;
 					SDL_SetWindowRelativeMouseMode(context.window, lockMouse);
 				}
@@ -138,31 +140,24 @@ int main()
 		
 		Update();
 		Draw();
-		}
+	}
 
 	return 0;
 }
 
 void Update()
 {
-	mesh.rotation = glm::vec3(0, SDL_GetTicks() / 500.0f, 0);
-	mesh2.rotation = glm::vec3(SDL_GetTicks() / 500.0f, 0, 0);
-	//camera.position = glm::vec3(sin(SDL_GetTicks() / 1000.0f) * 0.5f, 0, cos(SDL_GetTicks() / 1000.0f) * 0.5f);
-	//camera.LookAtPos(glm::vec3(0));
-
 	if(lockMouse)
 	{
-		camera.rotation.x += xMouse * 1.5f;
-		camera.rotation.y += yMouse * 1.5f;
+		camera.rotation.x += xMouse * 0.25f * camera.fov * 0.01;
+		camera.rotation.y += yMouse * 0.25f * camera.fov * 0.01;
 		if(camera.rotation.y > 89.0f)
 			camera.rotation.y =  89.0f;
 		if(camera.rotation.y < -89.0f)
 			camera.rotation.y = -89.0f;
+		pastXMouse = xMouse;
+		pastYMouse = yMouse;
 	}
-
-
-	xMouse = 0;
-	yMouse = 0;
 }
 
 void Draw()
@@ -214,7 +209,6 @@ void Draw()
 		glm::mat4 view = camera.GetViewMat();
 		
 		mesh.DrawMesh(&context, renderPass, cmdbuf, proj, view);
-		mesh2.DrawMesh(&context, renderPass, cmdbuf, proj, view);
 
 		ImguiDraw(cmdbuf, renderPass);
 
@@ -262,7 +256,6 @@ void Quit()
 	m51.Delete(&context);
 	context.backBuffer.Delete(&context);
 	mesh.Delete(&context);
-	mesh2.Delete(&context);
 	context.defaultPipeline.Delete(&context);
     SDL_ReleaseWindowFromGPUDevice(context.gpuDevice, context.window);
     SDL_DestroyWindow(context.window);

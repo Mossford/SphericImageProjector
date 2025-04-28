@@ -36,17 +36,45 @@ void Texture::CreateSampler(AppContext* context, SDL_GPUSamplerCreateInfo sample
 void Texture::LoadFromFile(AppContext* context, std::string file)
 {
     SDL_Surface* image = IMG_Load((context->basePath + file).c_str());
+    if(image == NULL)
+    {
+        unsigned char pixels[64][64][3];
+        SDL_Log("Could not find image %s", file.c_str());
+        image = SDL_CreateSurface(64, 64, SDL_PIXELFORMAT_RGB24);
+        for (unsigned int x = 0; x < 64; x++)
+        {
+            for (unsigned int y = 0; y < 64; y++)
+            {
+                if ((x / 4 + y / 4) % 2 == 0)
+                {
+                    pixels[x][y][0] = 255;
+                    pixels[x][y][1] = 0;
+                    pixels[x][y][2] = 255;
+                }
+                else
+                {
+                    pixels[x][y][0] = 0;
+                    pixels[x][y][1] = 0;
+                    pixels[x][y][2] = 0;
+                }
+            }
+        }
+
+        image->pixels = &pixels;
+    }
     //flip vertical as sdl loads it vertically flipped
     SDL_FlipSurface(image, SDL_FLIP_VERTICAL);
+    //flip horizontal
+    //SDL_FlipSurface(image, SDL_FLIP_HORIZONTAL);
 
     CreateTexture(context, SDL_GPU_TEXTURETYPE_2D, image->w, image->h, SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, SDL_GPU_TEXTUREUSAGE_SAMPLER);
     SDL_GPUSamplerCreateInfo samplerInfo = {};
     samplerInfo.min_filter = SDL_GPU_FILTER_NEAREST;
 	samplerInfo.mag_filter = SDL_GPU_FILTER_NEAREST;
 	samplerInfo.mipmap_mode = SDL_GPU_SAMPLERMIPMAPMODE_NEAREST;
-	samplerInfo.address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_REPEAT;
-	samplerInfo.address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_REPEAT;
-	samplerInfo.address_mode_w = SDL_GPU_SAMPLERADDRESSMODE_REPEAT;
+	samplerInfo.address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
+	samplerInfo.address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
+	samplerInfo.address_mode_w = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
     CreateSampler(context, samplerInfo);
 
     int pixelSize = 4;
@@ -71,44 +99,6 @@ void Texture::LoadFromFile(AppContext* context, std::string file)
     {
         textureTransferPtr[i] = data[i];
     }
-
-    //generate borders
-    for (unsigned int x = 0; x < image->w; x++)
-    {
-        for (unsigned int y = 0; y < image->h; y++)
-        {
-            if(x < 10)
-            {
-                int index = (x * image->h) + y;
-                textureTransferPtr[index] = 255;
-                textureTransferPtr[index + 1] = 255;
-                textureTransferPtr[index + 2] = 255;
-            }
-            if(y < 10)
-            {
-                int index = (x * image->h) + y;
-                textureTransferPtr[index] = 255;
-                textureTransferPtr[index + 1] = 255;
-                textureTransferPtr[index + 2] = 255;
-            }
-            if(x > image->w - 10)
-            {
-                int index = (x * image->h) + y;
-                textureTransferPtr[index] = 255;
-                textureTransferPtr[index + 1] = 255;
-                textureTransferPtr[index + 2] = 255;
-            }
-            if(y > image->h - 10)
-            {
-                int index = (x * image->h) + y;
-                textureTransferPtr[index] = 255;
-                textureTransferPtr[index + 1] = 255;
-                textureTransferPtr[index + 2] = 255;
-            }
-        }
-        
-    }
-    
     
 	SDL_UnmapGPUTransferBuffer(context->gpuDevice, textureTransferBuffer);
 

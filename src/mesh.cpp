@@ -1,5 +1,22 @@
 #include "mesh.hpp"
 
+glm::mat4 createStereographicProjection(float scale = 1.0f)
+{
+    glm::mat4 proj(0.0f);
+
+    // Basic stereographic projection (assuming z is not 1)
+    // Maps (x, y, z) to (x / (1 - z), y / (1 - z), ...)
+
+    proj[0][0] = scale;
+    proj[1][1] = scale;
+    proj[3][2] = -scale;  // Equivalent to dividing x and y by (1 - z)
+
+    proj[2][3] = 1.0f;    // Homogenize perspective divide (w = 1 - z)
+    proj[3][3] = 1.0f;
+
+    return proj;
+}
+
 Mesh::Mesh()
 {
 
@@ -209,51 +226,6 @@ void Mesh::CreateSmoothNormals()
     }
 }
 
-void Mesh::GenerateUv()
-{
-    if (vertexes.size() == 0) 
-        return;
-
-    float minX = vertexes[0].position.x;
-    float maxX = vertexes[0].position.x;
-    float minY = vertexes[0].position.y;
-    float maxY = vertexes[0].position.y;
-
-    for (unsigned int i = 0; i < vertexes.size(); i++)
-    {
-        minX = std::min(minX, vertexes[i].position.x);
-        maxX = std::max(maxX, vertexes[i].position.x);
-        minY = std::min(minY, vertexes[i].position.y);
-        maxY = std::max(maxY, vertexes[i].position.y);
-    }
-
-    float rangeX = maxX - minX;
-    float rangeY = maxY - minY;
-
-    if (rangeX == 0.0f) 
-        rangeX = 1.0f;
-    if (rangeY == 0.0f) 
-        rangeY = 1.0f;
-
-    for (unsigned int i = 0; i < vertexes.size(); i++)
-    {
-        vertexes[i].uv.x = (vertexes[i].position.x - minX) / rangeX;
-        vertexes[i].uv.y = (vertexes[i].position.y - minY) / rangeY;
-    }
-}
-
-void Mesh::GenerateSphereUv()
-{
-    //https://en.wikipedia.org/wiki/UV_mapping
-
-    for (unsigned int i = 0; i < vertexes.size(); i++)
-    {
-        vertexes[i].uv.x = 0.5f + (atan2(vertexes[i].position.z, vertexes[i].position.x));
-        vertexes[i].uv.y = 0.5f + (asin(vertexes[i].position.y));
-    }
-}
-
- 
 void Mesh::SubdivideTriangle()
 {
     std::vector<unsigned int> newIndices;
@@ -306,6 +278,18 @@ void Mesh::SubdivideTriangle()
     indices = newIndices;
     vertexes.clear();
     vertexes = newVerts;
+}
+
+void Mesh::Balloon(float delta = 0.0f, float speed = 0.0f, float percentage = 0.0f)
+{
+    for (unsigned int i = 0; i < vertexes.size(); i++)
+    {
+        glm::vec3 finPos = glm::normalize(vertexes[i].position);
+        if(percentage == 0)
+            vertexes[i].position = vertexes[i].position * (1.0f - ((SDL_GetTicks() / 1000.0f) * delta * speed)) + finPos * ((SDL_GetTicks() / 1000.0f) * delta * speed);
+        else
+            vertexes[i].position = vertexes[i].position * (1.0f - percentage) + finPos * percentage;
+    }
 }
 
 //
@@ -469,4 +453,48 @@ Mesh CreateSphereMesh(glm::vec3 position, glm::vec3 rotation, unsigned int subdi
     }
     Mesh mesh = Mesh(vertexes, indices, position, rotation, 1.0f);
     return mesh;
+}
+
+Mesh CreateCubeSphereMesh(glm::vec3 position, glm::vec3 rotation, unsigned int subdivideNum)
+{
+    Mesh mesh = CreateCubeMesh(position, rotation);
+
+    for (unsigned int i = 0; i < subdivideNum; i++)
+    {
+        mesh.SubdivideTriangle();
+    }
+    
+    for (unsigned int i = 0; i < mesh.vertexes.size(); i++)
+    {
+        glm::vec3 tempPos = mesh.vertexes[i].position * mesh.vertexes[i].position;
+        mesh.vertexes[i].position = glm::vec3(
+            mesh.vertexes[i].position.x * sqrt(1 - ((tempPos.y + tempPos.z) / 2) + ((tempPos.y + tempPos.z) / 3)),
+            mesh.vertexes[i].position.y * sqrt(1 - ((tempPos.z + tempPos.x) / 2) + ((tempPos.z + tempPos.x) / 3)),
+            mesh.vertexes[i].position.z * sqrt(1 - ((tempPos.x + tempPos.y) / 2) + ((tempPos.x + tempPos.y) / 3))
+        );
+    }
+
+    mesh.GenerateEquirectangularUv();
+
+    mesh.Balloon(0, 0, 1);
+    
+    return mesh;
+}
+
+Mesh CreateUvSquare(glm::vec3 position, glm::vec3 rotation, unsigned int subdivideNum)
+{
+    Mesh mesh = CreateCubeSphereMesh(position, rotation, subdivideNum);
+
+    Mesh meshUv;
+    for (int i = 0; i < mesh.vertexes.size(); i++)
+    {
+        meshUv.vertexes.push_back(Vertex(glm::vec3(mesh.vertexes[i].uv, 0.0f), glm::vec3(1.0), mesh.vertexes[i].uv));
+    }
+    
+    for (int i = 0; i < mesh.indices.size(); i++)
+    {
+        meshUv.indices.push_back(mesh.indices[i]);
+    }
+    
+    return meshUv;
 }

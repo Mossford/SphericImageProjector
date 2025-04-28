@@ -15,9 +15,10 @@ Camera::Camera(glm::vec3 position, glm::vec3 rotation, glm::vec3 target, float f
 
 glm::vec3 Camera::GetCameraDir()
 {
-    target.x = -sinf(rotation.x*(3.14159265358979323846f/180.0f)) * cosf((rotation.y)*(3.14159265358979323846f/180.0f));
-    target.y = -sinf((rotation.y)*(3.14159265358979323846f/180.0f));
-    target.z = cosf((rotation.x)*(3.14159265358979323846f/180.0f)) * cosf((rotation.y)*(3.14159265358979323846f/180.0f));
+    float degToRad = M_PI / 180.0f;
+    target.x = -sin(rotation.x * degToRad) * cos(rotation.y * degToRad);
+    target.y = -sin(rotation.y * degToRad);
+    target.z = cos(rotation.x * degToRad) * cos(rotation.y * degToRad);
     return glm::normalize(target);
 }
 
@@ -39,7 +40,8 @@ glm::mat4 Camera::GetViewMat()
 
 glm::mat4 Camera::GetProjMat(int width, int height, float near, float far)
 {
-    return glm::perspective(glm::radians(fov), (float)width / (float)height, near, far);
+    float degToRad = M_PI / 180.0f;
+    return glm::perspective(fov * degToRad, (float)width / (float)height, near, far);
 }
 
 void Camera::LookAtPos(glm::vec3 pos)
