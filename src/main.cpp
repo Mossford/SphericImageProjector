@@ -98,9 +98,9 @@ int main()
 
 	m51.LoadFromFile(&context, "M51.png");
 
-	mesh = CreateCubeSphereMesh(glm::vec3(0,0,0), glm::vec3(0,0,0), 5);
+	mesh = CreateSphereMesh(glm::vec3(0,0,0), glm::vec3(0,0,0), 3);
 	mesh.CreateSmoothNormals();
-	mesh.scale = 100;
+	mesh.scale = 1;
 	mesh.BufferGens(&context);
 
 	camera = Camera(glm::vec3(0,0,0), glm::vec3(0), glm::vec3(0, 0, 0), 70);

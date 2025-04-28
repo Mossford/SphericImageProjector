@@ -474,8 +474,6 @@ Mesh CreateCubeSphereMesh(glm::vec3 position, glm::vec3 rotation, unsigned int s
         );
     }
 
-    mesh.GenerateEquirectangularUv();
-
     mesh.Balloon(0, 0, 1);
     
     return mesh;

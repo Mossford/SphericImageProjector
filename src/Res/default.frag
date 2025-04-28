@@ -33,9 +33,8 @@ void main()
         if(uv.x >= DegToUvX(imgX) && uv.x <= DegToUvX(imgX + 3.41) && uv.y >= DegToUvY(imgY) && uv.y <= DegToUvY(imgY + 2.28))
         {
             //scale to 0-1 for the small section
-            uv.x = (uv.x - DegToUvX(imgX)) / (DegToUvX(imgX + 3.41) - DegToUvX(imgX));
-            uv.y = (uv.y - DegToUvY(imgY)) / (DegToUvY(imgY + 2.28) - DegToUvY(imgY));
-            color = texture(textureSamp, uv).rgb;
+            vec2 uvScale = vec2((uv.x - DegToUvX(imgX)) / (DegToUvX(imgX + 3.41) - DegToUvX(imgX)), (uv.y - DegToUvY(imgY)) / (DegToUvY(imgY + 2.28) - DegToUvY(imgY)));
+            color = texture(textureSamp, uvScale).rgb;
         }
     }
 
