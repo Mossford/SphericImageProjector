@@ -40,6 +40,8 @@ float pastXMouse = 0;
 float pastYMouse = 0;
 float xMouse = 0;
 float yMouse = 0;
+float frameTime;
+float pastTime;
 bool lockMouse = false;
 
 int main()
@@ -96,9 +98,9 @@ int main()
 
 	context.backBuffer.CreateTexture(&context, SDL_GPU_TEXTURETYPE_2D, windowStartWidth, windowStartHeight, SDL_GPU_TEXTUREFORMAT_D16_UNORM, SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET);
 
-	m51.LoadFromFile(&context, "M51.png");
+	m51.LoadFromFile(&context, "uvCheck.jpg");
 
-	mesh = CreateSphereMesh(glm::vec3(0,0,0), glm::vec3(0,0,0), 3);
+	mesh = Create2DQuadSpherical(glm::vec3(3,0,-3), glm::vec3(0,0,0), 3);
 	mesh.CreateSmoothNormals();
 	mesh.scale = 1;
 	mesh.BufferGens(&context);
@@ -107,6 +109,10 @@ int main()
 
 	while (!quit)
 	{
+		float time = SDL_GetTicks();
+		frameTime = time - pastTime;
+		frameTime /= 1000.0f;
+
 		SDL_GetRelativeMouseState(&xMouse, &yMouse);
 		SDL_Event event;
 		while (SDL_PollEvent(&event))
@@ -140,6 +146,8 @@ int main()
 		
 		Update();
 		Draw();
+
+		pastTime = time;
 	}
 
 	return 0;
@@ -147,6 +155,10 @@ int main()
 
 void Update()
 {
+	float earthRotationSpeed = 0.00382388888f * 3600.0f;
+	//mesh.rotation.x = 23.4f;
+	//mesh.rotation.y += earthRotationSpeed * frameTime;
+
 	if(lockMouse)
 	{
 		camera.rotation.x += xMouse * 0.25f * camera.fov * 0.01;
@@ -226,13 +238,11 @@ void ImguiUpdate()
 
     ImGui::Begin("SpaceTesting", nullptr, window_flags);
 
-    //needs to be io.framerate because the actal deltatime is polled too fast and the 
-    //result is hard to read
     //ImGui::Text("Version %s", EngVer.c_str());
     ImGui::Text("%.3f ms/frame (%.1f FPS)", (1.0f / context.imguiIO->Framerate) * 1000.0f, context.imguiIO->Framerate);
     //ImGui::Text("%u verts, %u indices (%u tris)", vertCount, indCount, indCount / 3);
     //ImGui::Text("DrawCall Avg: (%.1f) DC/frame, DrawCall Total (%d)", drawCallAvg, DrawCallCount);
-    ImGui::Text("Time Open %.1f minutes", (SDL_GetTicks() / (60.0f * 1000.0f)));
+    ImGui::Text("Time Open %.0f:%.2d", floorf(SDL_GetTicks() / (60.0f * 1000.0f)), (int)(SDL_GetTicks() / 1000.0f) % 60);
     //ImGui::Text("Time taken for Update run %.2fms ", fabs(updateTime));
     //ImGui::Text("Time taken for Fixed Update run %.2fms ", fabs(updateFixedTime));
 

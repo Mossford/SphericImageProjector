@@ -41,6 +41,8 @@ public:
 };
 
 Mesh Create2DTriangle(glm::vec3 position, glm::vec3 rotation);
+Mesh Create2DQuad(glm::vec3 position, glm::vec3 rotation);
+Mesh Create2DQuadSpherical(glm::vec3 position, glm::vec3 rotation, unsigned int subdivideNum);
 Mesh CreateCubeMesh(glm::vec3 position, glm::vec3 rotation);
 Mesh CreateSphereMesh(glm::vec3 position, glm::vec3 rotation, unsigned int subdivideNum);
 Mesh CreateCubeSphereMesh(glm::vec3 position, glm::vec3 rotation, unsigned int subdivideNum);

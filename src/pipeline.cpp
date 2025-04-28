@@ -100,7 +100,6 @@ void Pipeline::CreatePipeline(AppContext* context)
 	SDL_ReleaseGPUShader(context->gpuDevice, fragmentShader.shader);
 
     this->pipelineCreateInfo = pipelineCreateInfo;
-    this->pipeline = pipeline;
 }
 
 void Pipeline::Bind(SDL_GPURenderPass* renderPass)

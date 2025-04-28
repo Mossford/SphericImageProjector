@@ -26,7 +26,7 @@ void main()
     vec2 uv = vec2(0.5 + (atan(aPos.z, aPos.x) / (2.0 * PI)), 0.5 + (asin(aPos.y) / PI));
 
     vec3 color = vec3(1.0);
-    for(int y = 90; y < 180; y += 5)
+    /*for(int y = 90; y < 180; y += 5)
     {
         float imgX = 270;
         float imgY = y;
@@ -36,7 +36,9 @@ void main()
             vec2 uvScale = vec2((uv.x - DegToUvX(imgX)) / (DegToUvX(imgX + 3.41) - DegToUvX(imgX)), (uv.y - DegToUvY(imgY)) / (DegToUvY(imgY + 2.28) - DegToUvY(imgY)));
             color = texture(textureSamp, uvScale).rgb;
         }
-    }
+    }*/
+
+    color = texture(textureSamp, aUV).rgb;
 
     //color *= aNormal;
     

@@ -321,6 +321,64 @@ Mesh Create2DTriangle(glm::vec3 position, glm::vec3 rotation)
     return Mesh(vertxes, indices, position, rotation, 1);
 }
 
+Mesh Create2DQuad(glm::vec3 position, glm::vec3 rotation)
+{
+    std::vector<Vertex> vertxes;
+
+    Vertex tmpvertex = Vertex(glm::vec3(-1.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f));
+    vertxes.push_back(tmpvertex);
+
+    tmpvertex.position = glm::vec3(1.0f, -1.0f, 0.0f);
+    tmpvertex.uv = glm::vec2(1.0f, 0.0f);
+    vertxes.push_back(tmpvertex);
+
+    tmpvertex.position = glm::vec3(1.0f, 1.0f, 0.0f);
+    tmpvertex.uv = glm::vec2(1.0f, 1.0f);
+    vertxes.push_back(tmpvertex);
+
+    tmpvertex.position = glm::vec3(-1.0f, 1.0f, 0.0f);
+    tmpvertex.uv = glm::vec2(0.0f, 1.0f);
+    vertxes.push_back(tmpvertex);
+
+    std::vector<unsigned int> indices =
+    {
+        0, 1, 2,
+        0, 2, 3
+    };
+
+    return Mesh(vertxes, indices, position, rotation, 1);
+}
+
+Mesh Create2DQuadSpherical(glm::vec3 position, glm::vec3 rotation, unsigned int subdivideNum)
+{
+    Mesh mesh = Create2DQuad(position, rotation);
+
+    for(int i = 0; i < mesh.vertexes.size(); i++)
+    {
+        glm::vec3 pos = glm::vec3(glm::scale(glm::mat4(1.0f), glm::vec3(0.1f)) * glm::vec4(mesh.vertexes[i].position, 1.0f));
+        mesh.vertexes[i].position = pos;
+    }
+
+    for(int i = 0; i < subdivideNum; i++)
+    {
+        mesh.SubdivideTriangle();
+    }
+
+    float degToRad = M_PI / 180.0f;
+    for(int i = 0; i < mesh.indices.size(); i++)
+    {
+        int index = mesh.indices[i];
+        //shift it over
+        //mesh.vertexes[i].position += glm::vec3(cos(45 * degToRad), sin(45 * degToRad), -1 * cos(45 * degToRad));
+        //normalize to get curvature
+        //mesh.vertexes[index].position = glm::normalize(mesh.vertexes[index].position);
+        //shift it back
+        //mesh.vertexes[i].position -= glm::vec3(cos(45 * degToRad), sin(45 * degToRad), -1 * cos(45 * degToRad));
+    }
+
+    return mesh;
+}
+
 Mesh CreateCubeMesh(glm::vec3 position, glm::vec3 rotation)
 {
     std::vector<Vertex> vertexes = {
