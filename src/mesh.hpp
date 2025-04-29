@@ -33,12 +33,12 @@ public:
     void DrawMesh(AppContext* context, SDL_GPURenderPass* renderPass, SDL_GPUCommandBuffer* cmbBuf, glm::mat4 proj, glm::mat4 view);
     void Delete(AppContext* context);
     void CreateModelMat();
-    void ProjectToSphere();
     void CreateRotationMat();
     void FixWindingOrder();
     void CreateSmoothNormals();
     void SubdivideTriangle();
     void Balloon(float delta, float speed, float percentage);
+    void ProjectToSphere(glm::mat4 rotationMat, glm::mat4 scaleMat, int subdivideNum);
 };
 
 Mesh Create2DTriangle(glm::vec3 position, glm::vec3 rotation);

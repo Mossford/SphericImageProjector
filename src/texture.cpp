@@ -65,7 +65,7 @@ void Texture::LoadFromFile(AppContext* context, std::string file)
     //flip vertical as sdl loads it vertically flipped
     SDL_FlipSurface(image, SDL_FLIP_VERTICAL);
     //flip horizontal
-    //SDL_FlipSurface(image, SDL_FLIP_HORIZONTAL);
+    SDL_FlipSurface(image, SDL_FLIP_HORIZONTAL);
 
     CreateTexture(context, SDL_GPU_TEXTURETYPE_2D, image->w, image->h, SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, SDL_GPU_TEXTUREUSAGE_SAMPLER);
     SDL_GPUSamplerCreateInfo samplerInfo = {};

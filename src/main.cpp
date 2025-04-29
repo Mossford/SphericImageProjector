@@ -34,7 +34,7 @@ int SDL_FailCustom()
 }
 
 AppContext context;
-Mesh sphere;
+Mesh ground;
 Camera camera;
 Texture m51;
 float pastXMouse = 0;
@@ -103,15 +103,15 @@ int main()
 
 	m51.LoadFromFile(&context, "uvCheck.jpg");
 
-	sphere = CreateSphereMesh(glm::vec3(0,0,0), glm::vec3(0), 3);
-	sphere.scale = glm::vec3(1.1f);
-	sphere.CreateSmoothNormals();
-	sphere.BufferGens(&context);
+	ground = Create2DQuad(glm::vec3(0,-0.05f,0), glm::vec3(90, 0, 0));
+	ground.scale = glm::vec3(3);
+	ground.CreateSmoothNormals();
+	ground.BufferGens(&context);
 
 	camera = Camera(glm::vec3(0,0,0), glm::vec3(0), glm::vec3(0, 0, 0), 70, windowStartWidth, windowStartHeight, 0.1f, 10000.0f);
 
 	sipManager.Initalize(&context, 100, 0);
-	sipManager.LoadImage("M51.png", 40, 50, glm::vec2(0.2, 0.1), 0, &context);
+	sipManager.LoadImage("M51.png", 50, 30, glm::vec2(3.41f, 2.28f), 0, &context);
 
 	while (!quit)
 	{
@@ -161,9 +161,9 @@ int main()
 
 void Update()
 {
-	float earthRotationSpeed = 0.00382388888f * 3600.0f;
-	sphere.rotation.x = 23.4f;
-	sphere.rotation.y += earthRotationSpeed * frameTime;
+	ground.rotation.z += sipManager.earthRotationSpeed * frameTime;
+
+	sipManager.Update(&context, frameTime);
 
 	if(lockMouse)
 	{
@@ -205,7 +205,7 @@ void Draw()
 	{
 		SDL_GPUColorTargetInfo colorTargetInfo = {};
 		colorTargetInfo.texture = swapchainTexture;
-		colorTargetInfo.clear_color = (SDL_FColor){ 0.4f, 0.7f, 0.8f, 1.0f };
+		colorTargetInfo.clear_color = (SDL_FColor){ 1.0f, 1.0f, 1.0f, 1.0f };
 		colorTargetInfo.load_op = SDL_GPU_LOADOP_CLEAR;
 		colorTargetInfo.store_op = SDL_GPU_STOREOP_STORE;
 
@@ -226,8 +226,8 @@ void Draw()
 		glm::mat4 proj = camera.GetProjMat();
 		glm::mat4 view = camera.GetViewMat();
 		
-		sphere.CreateModelMat();
-		sphere.DrawMesh(&context, renderPass, cmdbuf, proj, view);
+		ground.CreateModelMat();
+		ground.DrawMesh(&context, renderPass, cmdbuf, proj, view);
 
 		sipManager.Draw(&context, &camera, renderPass, cmdbuf);
 
@@ -255,10 +255,9 @@ void ImguiUpdate()
     //ImGui::Text("Time taken for Update run %.2fms ", fabs(updateTime));
     //ImGui::Text("Time taken for Fixed Update run %.2fms ", fabs(updateFixedTime));
 
-    ImGui::Spacing();
-    ImGui::DragFloat3("Player Position", glm::value_ptr(camera.position), 0.1f, -10.0f, 10.0f);
-    ImGui::DragFloat3("Player Rotation", glm::value_ptr(camera.rotation), 1.0f, -360.0f, 360.0f);
-    ImGui::SliderFloat("Cam Fov", &camera.fov, 179.9f, 0.01f);
+	ImGui::Spacing();
+	ImGui::Text("Number of loaded images: %d", sipManager.currentImageCount);
+
 	ImGui::End();
 }
 
@@ -274,7 +273,7 @@ void Quit()
 {
 	m51.Delete(&context);
 	context.backBuffer.Delete(&context);
-	sphere.Delete(&context);
+	ground.Delete(&context);
 
 	sipManager.Clean(&context);
 

@@ -25,8 +25,8 @@ void SIPManager::Update(AppContext* context, float deltaTime)
         if(!images[i].created)
           continue;
 
-        //images[i].ApplyRotation();
-        //images->UpdateMesh(context);
+        images[i].ApplyRotation(earthRotationSpeed, deltaTime);
+        images[i].UpdateMesh(context);
     }
 }
 

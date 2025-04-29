@@ -13,14 +13,18 @@ SIPImage::SIPImage()
 
 void SIPImage::CreateFromFile(std::string file, float azimuth, float altitude, glm::vec2 angularSize, float time, AppContext* context)
 {
+    //for some reason this is multipled by pi
+    angularSize *=  M_PI / 180.0f;
+
     this->file = file;
     this->azimuth = azimuth;
     this->altitude = altitude;
     this->angularSize = angularSize;
     this->time = time;
 
+
     image.LoadFromFile(context, file);
-    mesh = Create2DQuadSpherical(glm::vec3(0), glm::vec3(azimuth, altitude, 1.0f), angularSize, 3);
+    mesh = Create2DQuadSpherical(glm::vec3(0), glm::vec3(azimuth, altitude, 1.0f), angularSize, 2);
     mesh.BufferGens(context);
 
     created = true;
@@ -28,7 +32,14 @@ void SIPImage::CreateFromFile(std::string file, float azimuth, float altitude, g
 
 void SIPImage::UpdateMesh(AppContext* context)
 {
-    mesh.ProjectToSphere();
+    float degToRad = M_PI / 180.0f;
+
+    glm::mat4 rotationMat = glm::mat4(1.0f);
+    rotationMat = glm::rotate(rotationMat, rotation.x * degToRad, glm::vec3(1.0f,0.0f,0.0f));
+    rotationMat = glm::rotate(rotationMat, rotation.y * degToRad, glm::vec3(0.0f,1.0f,0.0f));
+    rotationMat = glm::rotate(rotationMat, rotation.z * degToRad, glm::vec3(0.0f,0.0f,1.0f));
+
+    mesh.ProjectToSphere(rotationMat, glm::scale(rotationMat, glm::vec3(angularSize.x, angularSize.y, 1.0f)), 2);
     mesh.ReGenBuffer(context);
 }
 
@@ -46,8 +57,9 @@ void SIPImage::Delete(AppContext* context)
     created = false;
 }
 
-void SIPImage::ApplyRotation(float rotiation, float deltaTime)
+void SIPImage::ApplyRotation(float rotation, float deltaTime)
 {
-
+    this->rotation.x = 23.4f;
+    this->rotation.y -= rotation * deltaTime;
 }
 

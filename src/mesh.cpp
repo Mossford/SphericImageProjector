@@ -273,7 +273,7 @@ void Mesh::Balloon(float delta = 0.0f, float speed = 0.0f, float percentage = 0.
     }
 }
 
-void Mesh::ProjectToSphere()
+void Mesh::ProjectToSphere(glm::mat4 rotationMat, glm::mat4 scaleMat, int subdivideNum)
 {
     Mesh mesh = Create2DQuad(position, glm::vec3(0));
 
@@ -286,7 +286,6 @@ void Mesh::ProjectToSphere()
     target.z = -cos(rotation.x * degToRad) * cos(rotation.y * degToRad);
 
     glm::mat4 rot = glm::mat4(1.0f);
-    glm::mat4 scaleMat = glm::scale(rot, scale);
     rot = glm::translate(rot, target);
     //make the quad look at the center facing inwards
     rot *= glm::inverse(glm::lookAt(target, glm::vec3(0.0f), glm::vec3(0,1,0)));
@@ -294,12 +293,12 @@ void Mesh::ProjectToSphere()
     //rotation does not need to be done on the subdivided quad
     for (int i = 0; i < mesh.vertexes.size(); ++i)
     {
-        //scale it first so rotation does not cause distortion
-        mesh.vertexes[i].position = glm::vec3(scaleMat * glm::vec4(mesh.vertexes[i].position, 1.0f));
-        mesh.vertexes[i].position = glm::vec3(rot * glm::vec4(mesh.vertexes[i].position, 1.0f));
+        mesh.vertexes[i].position = glm::vec3(rot * scaleMat * glm::vec4(mesh.vertexes[i].position, 1.0f));
+        //secondary rotation to add a rotation onto the quad
+        mesh.vertexes[i].position = glm::vec3(rotationMat * glm::vec4(mesh.vertexes[i].position, 1.0f));
     }
 
-    for (int i = 0; i < 3; ++i)
+    for (int i = 0; i < subdivideNum; ++i)
     {
         mesh.SubdivideTriangle();
     }
@@ -371,7 +370,7 @@ Mesh Create2DQuad(glm::vec3 position, glm::vec3 rotation)
 
 Mesh Create2DQuadSpherical(glm::vec3 position, glm::vec3 rotation, glm::vec2 scale, unsigned int subdivideNum)
 {
-    Mesh mesh = Create2DQuad(position, glm::vec3(0));
+    Mesh mesh = Create2DQuad(position, rotation);
 
     float degToRad = M_PI / 180.0f;
 

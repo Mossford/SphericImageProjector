@@ -29,5 +29,5 @@ public:
     void Delete(AppContext* context);
 
     //applys the earths rotation
-    void ApplyRotation(float rotiation, float deltaTime);
+    void ApplyRotation(float rotation, float deltaTime);
 };
