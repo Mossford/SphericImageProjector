@@ -25,7 +25,7 @@ void SIPManager::Update(AppContext* context, float deltaTime)
         if(!images[i].created)
           continue;
 
-        images[i].ApplyRotation(earthRotationSpeed, deltaTime);
+        images[i].ApplyRotation(earthRotationSpeed, latitude, deltaTime);
         images[i].UpdateMesh(context);
     }
 }
@@ -52,8 +52,21 @@ void SIPManager::LoadImage(std::string file, float azimuth, float altitude, glm:
     if(lastImage >= maxImages)
         return;
 
+    float deltaTime = 0;
+
+    //get base time
+    if(currentImageCount == 0)
+    {
+        baseTime = time;
+    }
+    else if(time != baseTime)
+    {
+        //check for time passing
+        deltaTime = baseTime - time;
+    }
+
     SIPImage image;
-    image.CreateFromFile(file, azimuth, altitude, angularSize, time, context);
+    image.CreateFromFile(file, azimuth, altitude, angularSize, deltaTime, earthRotationSpeed, context);
     images[lastImage] = image;
     lastImage++;
     currentImageCount++;

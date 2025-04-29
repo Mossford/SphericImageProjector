@@ -130,6 +130,7 @@ else()
     copy_helper("uvCheck.jpg")
     copy_helper("defaultSIPImage.frag")
     copy_helper("defaultSIPImage.vert")
+    copy_helper("M101.jpg")
 
 endif()
 

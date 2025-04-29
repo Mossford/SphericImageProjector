@@ -111,7 +111,9 @@ int main()
 	camera = Camera(glm::vec3(0,0,0), glm::vec3(0), glm::vec3(0, 0, 0), 70, windowStartWidth, windowStartHeight, 0.1f, 10000.0f);
 
 	sipManager.Initalize(&context, 100, 0);
-	sipManager.LoadImage("M51.png", 50, 30, glm::vec2(3.41f, 2.28f), 0, &context);
+	sipManager.LoadImage("M51.png", 74.76f, 71.7f, glm::vec2(3.41f, 2.28f), 31730, &context);
+	sipManager.LoadImage("M101.jpg", 54.55f, 67.85f, glm::vec2(3.41f, 2.28f), 32934, &context);
+	sipManager.LoadImage("uvCheck.jpg", 90, 90, glm::vec2(1.0f, 1.0f), 32934, &context);
 
 	while (!quit)
 	{
@@ -205,7 +207,7 @@ void Draw()
 	{
 		SDL_GPUColorTargetInfo colorTargetInfo = {};
 		colorTargetInfo.texture = swapchainTexture;
-		colorTargetInfo.clear_color = (SDL_FColor){ 1.0f, 1.0f, 1.0f, 1.0f };
+		colorTargetInfo.clear_color = (SDL_FColor){ 0.0f, 0.02f, 0.05f, 1.0f };
 		colorTargetInfo.load_op = SDL_GPU_LOADOP_CLEAR;
 		colorTargetInfo.store_op = SDL_GPU_STOREOP_STORE;
 
@@ -241,6 +243,8 @@ void Draw()
 
 void ImguiUpdate()
 {
+	float curTime = SDL_GetTicks();
+
 	static ImGuiWindowFlags window_flags = 0;
     window_flags |= ImGuiWindowFlags_NoTitleBar;
     window_flags |= ImGuiWindowFlags_MenuBar;
@@ -251,12 +255,24 @@ void ImguiUpdate()
     ImGui::Text("%.3f ms/frame (%.1f FPS)", (1.0f / context.imguiIO->Framerate) * 1000.0f, context.imguiIO->Framerate);
     //ImGui::Text("%u verts, %u indices (%u tris)", vertCount, indCount, indCount / 3);
     //ImGui::Text("DrawCall Avg: (%.1f) DC/frame, DrawCall Total (%d)", drawCallAvg, DrawCallCount);
-    ImGui::Text("Time Open %.0f:%.2d", floorf(SDL_GetTicks() / (60.0f * 1000.0f)), (int)(SDL_GetTicks() / 1000.0f) % 60);
+    ImGui::Text("Time Open %.0f:%.2d", floorf(curTime / (60.0f * 1000.0f)), (int)(curTime / 1000.0f) % 60);
     //ImGui::Text("Time taken for Update run %.2fms ", fabs(updateTime));
     //ImGui::Text("Time taken for Fixed Update run %.2fms ", fabs(updateFixedTime));
 
 	ImGui::Spacing();
 	ImGui::Text("Number of loaded images: %d", sipManager.currentImageCount);
+
+	float totalTime = sipManager.baseTime;
+	int utcHours = floor(totalTime / 10000);
+	int utcMins = (int)floor(totalTime / 100) % 100;
+	int utcSeconds = (int)totalTime % 100;
+
+	int utcHoursCur = (int)(floorf(((curTime / 1000.0f + utcSeconds) / 60.0f + utcMins) / 60.0f) + utcHours);
+	int utcMinsCur = (int)(floorf((curTime / 1000.0f + utcSeconds) / 60.0f) + utcMins) % 60;
+	int utcSecondsCur = ((int)(curTime / 1000.0f + utcSeconds) % 60);
+
+	ImGui::Text("Base Time (UTC): %02d:%02d:%02d", utcHours, utcMins, utcSeconds);
+	ImGui::Text("Time From Base (UTC): %02d:%02d:%02d", utcHoursCur, utcMinsCur, utcSecondsCur);
 
 	ImGui::End();
 }

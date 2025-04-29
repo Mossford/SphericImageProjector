@@ -14,7 +14,7 @@ public:
     float azimuth;
     float altitude;
     glm::vec2 angularSize;
-    //time the image was taken
+    //(hours * 10000) + (minutes * 100) + seconds in utc starting at 0-24 hours
     float time;
     bool created;
     glm::vec3 rotation;
@@ -23,11 +23,11 @@ public:
     Mesh mesh;
 
     SIPImage();
-    void CreateFromFile(std::string file, float azimuth, float altitude, glm::vec2 angularSize, float time, AppContext* context);
+    void CreateFromFile(std::string file, float azimuth, float altitude, glm::vec2 angularSize, float time, float earthRotation, AppContext* context);
     void UpdateMesh(AppContext* context);
     void DrawMesh(AppContext* context, glm::mat4 proj, glm::mat4 view, SDL_GPURenderPass* renderPass, SDL_GPUCommandBuffer* cmbBuf);
     void Delete(AppContext* context);
 
     //applys the earths rotation
-    void ApplyRotation(float rotation, float deltaTime);
+    void ApplyRotation(float earthRotation, float latitude, float deltaTime);
 };
