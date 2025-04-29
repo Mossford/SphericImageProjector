@@ -28,7 +28,7 @@ void SIPImage::CreateFromFile(std::string file, float azimuth, float altitude, g
 
     //calculate the starting rotation
     this->rotation.x = 23.4f - 45;
-    this->rotation.y += earthRotation * time;
+    this->rotation.y -= earthRotation * time;
 
 
     created = true;
@@ -50,7 +50,7 @@ void SIPImage::CreateFromSurface(SDL_Surface* surface, float azimuth, float alti
 
     //calculate the starting rotation
     //this->rotation.x = 23.4f;
-    this->rotation.y += earthRotation * time;
+    this->rotation.y -= earthRotation * time;
 
 
     created = true;
@@ -88,6 +88,6 @@ void SIPImage::ApplyRotation(float earthRotation, float latitude, float deltaTim
 {
     //since images are taken parallel to the ground we dont need to add in a x rotation
     //this->rotation.x = 23.4f - latitude;
-    this->rotation.y += earthRotation * deltaTime;
+    this->rotation.y -= earthRotation * deltaTime;
 }
 
