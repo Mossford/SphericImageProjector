@@ -55,11 +55,11 @@ void SIPManager::LoadImage(std::string file, float azimuth, float altitude, glm:
     float deltaTime = 0;
 
     //get base time
-    if(currentImageCount == 0)
+    if(currentImageCount == 0 || baseTime == -1)
     {
         baseTime = time;
     }
-    else if(time != baseTime)
+    else if(time != baseTime && baseTime != -1)
     {
         //check for time passing
         deltaTime = baseTime - time;
@@ -85,7 +85,7 @@ void SIPManager::LoadImage(SDL_Surface* surface, float azimuth, float altitude, 
     {
         baseTime = time;
     }
-    else if(time != baseTime)
+    else if(time != baseTime && baseTime != -1)
     {
         //check for time passing
         deltaTime = baseTime - time;
