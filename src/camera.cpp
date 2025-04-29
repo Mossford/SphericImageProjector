@@ -5,12 +5,16 @@ Camera::Camera()
 
 }
 
-Camera::Camera(glm::vec3 position, glm::vec3 rotation, glm::vec3 target, float fov)
+Camera::Camera(glm::vec3 position, glm::vec3 rotation, glm::vec3 target, float fov, int width, int height, float near, float far)
 {
     this->position = position;
     this->rotation = rotation;
     this->target = target;
     this->fov = fov;
+    this->width = width;
+    this->height = height;
+    this->near = near;
+    this->far = far;
 }
 
 glm::vec3 Camera::GetCameraDir()
@@ -38,7 +42,7 @@ glm::mat4 Camera::GetViewMat()
     return mat;
 }
 
-glm::mat4 Camera::GetProjMat(int width, int height, float near, float far)
+glm::mat4 Camera::GetProjMat()
 {
     float degToRad = M_PI / 180.0f;
     return glm::perspective(fov * degToRad, (float)width / (float)height, near, far);

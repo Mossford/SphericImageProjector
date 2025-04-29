@@ -17,6 +17,7 @@
 #include "mesh.hpp"
 #include "vertex.hpp"
 #include "camera.hpp"
+#include "sipManager.hpp"
 
 void Update();
 void Draw();
@@ -33,7 +34,7 @@ int SDL_FailCustom()
 }
 
 AppContext context;
-Mesh mesh;
+Mesh sphere;
 Camera camera;
 Texture m51;
 float pastXMouse = 0;
@@ -43,6 +44,8 @@ float yMouse = 0;
 float frameTime;
 float pastTime;
 bool lockMouse = false;
+
+SIPManager sipManager;
 
 int main()
 {
@@ -100,12 +103,15 @@ int main()
 
 	m51.LoadFromFile(&context, "uvCheck.jpg");
 
-	mesh = Create2DQuadSpherical(glm::vec3(3,0,-3), glm::vec3(0,0,0), 3);
-	mesh.CreateSmoothNormals();
-	mesh.scale = 1;
-	mesh.BufferGens(&context);
+	sphere = CreateSphereMesh(glm::vec3(0,0,0), glm::vec3(0), 3);
+	sphere.scale = glm::vec3(1.1f);
+	sphere.CreateSmoothNormals();
+	sphere.BufferGens(&context);
 
-	camera = Camera(glm::vec3(0,0,0), glm::vec3(0), glm::vec3(0, 0, 0), 70);
+	camera = Camera(glm::vec3(0,0,0), glm::vec3(0), glm::vec3(0, 0, 0), 70, windowStartWidth, windowStartHeight, 0.1f, 10000.0f);
+
+	sipManager.Initalize(&context, 100, 0);
+	sipManager.LoadImage("M51.png", 40, 50, glm::vec2(0.2, 0.1), 0, &context);
 
 	while (!quit)
 	{
@@ -125,7 +131,7 @@ int main()
 			}
 			if(event.type == SDL_EVENT_MOUSE_WHEEL)
 			{
-				camera.fov -= camera.fov * 0.01 * event.wheel.y;
+				camera.fov -= camera.fov * 0.1 * event.wheel.y;
 				camera.fov = std::min(170.0f, camera.fov);
 			}
 			if(event.type == SDL_EVENT_KEY_DOWN)
@@ -156,8 +162,8 @@ int main()
 void Update()
 {
 	float earthRotationSpeed = 0.00382388888f * 3600.0f;
-	//mesh.rotation.x = 23.4f;
-	//mesh.rotation.y += earthRotationSpeed * frameTime;
+	sphere.rotation.x = 23.4f;
+	sphere.rotation.y += earthRotationSpeed * frameTime;
 
 	if(lockMouse)
 	{
@@ -217,10 +223,13 @@ void Draw()
 		context.defaultPipeline.Bind(renderPass);
 		m51.BindSampler(renderPass, 0);
 
-		glm::mat4 proj = camera.GetProjMat(windowStartWidth, windowStartHeight, 0.1f, 10000.0f);
+		glm::mat4 proj = camera.GetProjMat();
 		glm::mat4 view = camera.GetViewMat();
 		
-		mesh.DrawMesh(&context, renderPass, cmdbuf, proj, view);
+		sphere.CreateModelMat();
+		sphere.DrawMesh(&context, renderPass, cmdbuf, proj, view);
+
+		sipManager.Draw(&context, &camera, renderPass, cmdbuf);
 
 		ImguiDraw(cmdbuf, renderPass);
 
@@ -265,7 +274,10 @@ void Quit()
 {
 	m51.Delete(&context);
 	context.backBuffer.Delete(&context);
-	mesh.Delete(&context);
+	sphere.Delete(&context);
+
+	sipManager.Clean(&context);
+
 	context.defaultPipeline.Delete(&context);
     SDL_ReleaseWindowFromGPUDevice(context.gpuDevice, context.window);
     SDL_DestroyWindow(context.window);

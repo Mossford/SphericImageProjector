@@ -1,22 +1,5 @@
 #include "mesh.hpp"
 
-glm::mat4 createStereographicProjection(float scale = 1.0f)
-{
-    glm::mat4 proj(0.0f);
-
-    // Basic stereographic projection (assuming z is not 1)
-    // Maps (x, y, z) to (x / (1 - z), y / (1 - z), ...)
-
-    proj[0][0] = scale;
-    proj[1][1] = scale;
-    proj[3][2] = -scale;  // Equivalent to dividing x and y by (1 - z)
-
-    proj[2][3] = 1.0f;    // Homogenize perspective divide (w = 1 - z)
-    proj[3][3] = 1.0f;
-
-    return proj;
-}
-
 Mesh::Mesh()
 {
 
@@ -37,7 +20,7 @@ Mesh::Mesh(std::vector<Vertex> vertexes, std::vector<unsigned int> indices, glm:
     this->indices = indices;
     this->position = position;
     this->rotation = rotation;
-    this->scale = scale;
+    this->scale = glm::vec3(scale);
 }
 
 void Mesh::Delete(AppContext* context)
@@ -115,16 +98,14 @@ void Mesh::BufferGens(AppContext* context)
 	SDL_ReleaseGPUTransferBuffer(context->gpuDevice, transferBuffer);
 }
 
-void Mesh::ReGenBuffer()
+void Mesh::ReGenBuffer(AppContext* context)
 {
-    
-    
+    Delete(context);
+    BufferGens(context);
 }
 
 void Mesh::DrawMesh(AppContext* context, SDL_GPURenderPass* renderPass, SDL_GPUCommandBuffer* cmbBuf, glm::mat4 proj, glm::mat4 view)
 {
-    CreateModelMat();
-
     glm::mat4 combineMat = proj * view * modelMatrix;
 
     SDL_GPUBufferBinding bufBindVert = {};
@@ -146,7 +127,7 @@ void Mesh::CreateModelMat()
     model = glm::rotate(model, rotation.x * 3.14159265358979323846f/180.0f, glm::vec3(1.0f,0.0f,0.0f));
     model = glm::rotate(model, rotation.y * 3.14159265358979323846f/180.0f, glm::vec3(0.0f,1.0f,0.0f));
     model = glm::rotate(model, rotation.z * 3.14159265358979323846f/180.0f, glm::vec3(0.0f,0.0f,1.0f));
-    model = glm::scale(model, glm::vec3(scale, scale, scale));
+    model = glm::scale(model, scale);
     modelMatrix = model;
 }
 
@@ -292,6 +273,45 @@ void Mesh::Balloon(float delta = 0.0f, float speed = 0.0f, float percentage = 0.
     }
 }
 
+void Mesh::ProjectToSphere()
+{
+    Mesh mesh = Create2DQuad(position, glm::vec3(0));
+
+    float degToRad = M_PI / 180.0f;
+
+    //https://en.wikipedia.org/wiki/Spherical_coordinate_system
+    glm::vec3 target;
+    target.x = sin(rotation.x * degToRad) * cos(rotation.y * degToRad);
+    target.y = sin(rotation.y * degToRad);
+    target.z = -cos(rotation.x * degToRad) * cos(rotation.y * degToRad);
+
+    glm::mat4 rot = glm::mat4(1.0f);
+    glm::mat4 scaleMat = glm::scale(rot, scale);
+    rot = glm::translate(rot, target);
+    //make the quad look at the center facing inwards
+    rot *= glm::inverse(glm::lookAt(target, glm::vec3(0.0f), glm::vec3(0,1,0)));
+
+    //rotation does not need to be done on the subdivided quad
+    for (int i = 0; i < mesh.vertexes.size(); ++i)
+    {
+        //scale it first so rotation does not cause distortion
+        mesh.vertexes[i].position = glm::vec3(scaleMat * glm::vec4(mesh.vertexes[i].position, 1.0f));
+        mesh.vertexes[i].position = glm::vec3(rot * glm::vec4(mesh.vertexes[i].position, 1.0f));
+    }
+
+    for (int i = 0; i < 3; ++i)
+    {
+        mesh.SubdivideTriangle();
+    }
+
+    for (int i = 0; i < mesh.vertexes.size(); ++i)
+    {
+        mesh.vertexes[i].position = glm::normalize(mesh.vertexes[i].position);
+    }
+
+    vertexes = mesh.vertexes;
+}
+
 //
 //
 //
@@ -349,31 +369,40 @@ Mesh Create2DQuad(glm::vec3 position, glm::vec3 rotation)
     return Mesh(vertxes, indices, position, rotation, 1);
 }
 
-Mesh Create2DQuadSpherical(glm::vec3 position, glm::vec3 rotation, unsigned int subdivideNum)
+Mesh Create2DQuadSpherical(glm::vec3 position, glm::vec3 rotation, glm::vec2 scale, unsigned int subdivideNum)
 {
-    Mesh mesh = Create2DQuad(position, rotation);
+    Mesh mesh = Create2DQuad(position, glm::vec3(0));
 
-    for(int i = 0; i < mesh.vertexes.size(); i++)
+    float degToRad = M_PI / 180.0f;
+
+    //https://en.wikipedia.org/wiki/Spherical_coordinate_system
+    glm::vec3 target;
+    target.x = sin(rotation.x * degToRad) * cos(rotation.y * degToRad);
+    target.y = sin(rotation.y * degToRad);
+    target.z = -cos(rotation.x * degToRad) * cos(rotation.y * degToRad);
+
+    glm::mat4 rot = glm::mat4(1.0f);
+    glm::mat4 scaleMat = glm::scale(rot, glm::vec3(scale, 1.0f));
+    rot = glm::translate(rot, target);
+    //make the quad look at the center facing inwards
+    rot *= glm::inverse(glm::lookAt(target, glm::vec3(0.0f), glm::vec3(0,1,0)));
+
+    //rotation does not need to be done on the subdivided quad
+    for (int i = 0; i < mesh.vertexes.size(); ++i)
     {
-        glm::vec3 pos = glm::vec3(glm::scale(glm::mat4(1.0f), glm::vec3(0.1f)) * glm::vec4(mesh.vertexes[i].position, 1.0f));
-        mesh.vertexes[i].position = pos;
+        //scale it first so rotation does not cause distortion
+        mesh.vertexes[i].position = glm::vec3(scaleMat * glm::vec4(mesh.vertexes[i].position, 1.0f));
+        mesh.vertexes[i].position = glm::vec3(rot * glm::vec4(mesh.vertexes[i].position, 1.0f));
     }
 
-    for(int i = 0; i < subdivideNum; i++)
+    for (int i = 0; i < subdivideNum; ++i)
     {
         mesh.SubdivideTriangle();
     }
 
-    float degToRad = M_PI / 180.0f;
-    for(int i = 0; i < mesh.indices.size(); i++)
+    for (int i = 0; i < mesh.vertexes.size(); ++i)
     {
-        int index = mesh.indices[i];
-        //shift it over
-        //mesh.vertexes[i].position += glm::vec3(cos(45 * degToRad), sin(45 * degToRad), -1 * cos(45 * degToRad));
-        //normalize to get curvature
-        //mesh.vertexes[index].position = glm::normalize(mesh.vertexes[index].position);
-        //shift it back
-        //mesh.vertexes[i].position -= glm::vec3(cos(45 * degToRad), sin(45 * degToRad), -1 * cos(45 * degToRad));
+        mesh.vertexes[i].position = glm::normalize(mesh.vertexes[i].position);
     }
 
     return mesh;

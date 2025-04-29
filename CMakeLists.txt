@@ -43,6 +43,8 @@ PRIVATE
     ${CMAKE_SOURCE_DIR}/src/math.cpp
     ${CMAKE_SOURCE_DIR}/src/pipeline.cpp
     ${CMAKE_SOURCE_DIR}/src/texture.cpp
+    ${CMAKE_SOURCE_DIR}/src/sipManager.cpp
+    ${CMAKE_SOURCE_DIR}/src/sipImage.cpp
 )
 
 # Set C++ version
@@ -126,6 +128,8 @@ else()
     copy_helper("default.frag")
     copy_helper("default.vert")
     copy_helper("uvCheck.jpg")
+    copy_helper("defaultSIPImage.frag")
+    copy_helper("defaultSIPImage.vert")
 
 endif()
 
