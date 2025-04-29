@@ -34,6 +34,29 @@ void SIPImage::CreateFromFile(std::string file, float azimuth, float altitude, g
     created = true;
 }
 
+void SIPImage::CreateFromSurface(SDL_Surface* surface, float azimuth, float altitude, glm::vec2 angularSize, float time, float earthRotation, AppContext* context)
+{
+    //for some reason this is multipled by pi
+    angularSize *=  M_PI / 180.0f;
+
+    this->azimuth = azimuth;
+    this->altitude = altitude;
+    this->angularSize = angularSize;
+    this->time = time;
+
+    image.CreateFromSurface(context, surface);
+    mesh = Create2DQuadSpherical(glm::vec3(0), glm::vec3(azimuth, altitude, 1.0f), angularSize, 2);
+    mesh.BufferGens(context);
+
+    //calculate the starting rotation
+    //this->rotation.x = 23.4f;
+    this->rotation.y -= earthRotation * time;
+
+
+    created = true;
+}
+
+
 void SIPImage::UpdateMesh(AppContext* context)
 {
     float degToRad = M_PI / 180.0f;
@@ -63,7 +86,8 @@ void SIPImage::Delete(AppContext* context)
 
 void SIPImage::ApplyRotation(float earthRotation, float latitude, float deltaTime)
 {
-    this->rotation.x = 23.4f - latitude;
+    //since images are taken parallel to the ground we dont need to add in a x rotation
+    //this->rotation.x = 23.4f - latitude;
     this->rotation.y -= earthRotation * deltaTime;
 }
 

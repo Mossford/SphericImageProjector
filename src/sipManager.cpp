@@ -72,6 +72,33 @@ void SIPManager::LoadImage(std::string file, float azimuth, float altitude, glm:
     currentImageCount++;
 }
 
+void SIPManager::LoadImage(SDL_Surface* surface, float azimuth, float altitude, glm::vec2 angularSize, float time, AppContext* context)
+{
+    //cap at max images
+    if(lastImage >= maxImages)
+        return;
+
+    float deltaTime = 0;
+
+    //get base time and reset the base time if the base time is -1
+    if(currentImageCount == 0 || baseTime == -1)
+    {
+        baseTime = time;
+    }
+    else if(time != baseTime)
+    {
+        //check for time passing
+        deltaTime = baseTime - time;
+    }
+
+    SIPImage image;
+    image.CreateFromSurface(surface, azimuth, altitude, angularSize, deltaTime, earthRotationSpeed, context);
+    images[lastImage] = image;
+    lastImage++;
+    currentImageCount++;
+}
+
+
 void SIPManager::DeleteImage(AppContext* context)
 {
     //check that we are not going to delete a empty image

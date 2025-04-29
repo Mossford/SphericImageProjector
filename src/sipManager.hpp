@@ -32,6 +32,7 @@ public:
     void Update(AppContext* context, float deltaTime);
     void Draw(AppContext* context, Camera* camera, SDL_GPURenderPass* renderPass, SDL_GPUCommandBuffer* cmbBuf);
     void LoadImage(std::string file, float azimuth, float altitude, glm::vec2 angularSize, float time, AppContext* context);
+    void LoadImage(SDL_Surface* surface, float azimuth, float altitude, glm::vec2 angularSize, float time, AppContext* context);
     void DeleteImage(AppContext* context);
     void Clean(AppContext* context);
 };

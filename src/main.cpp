@@ -55,6 +55,11 @@ int main()
 		return SDL_FailCustom();
 	}
 
+	if (!TTF_Init())
+	{
+		return SDL_FailCustom();
+	}
+
 	context.basePath = SDL_GetBasePath();
 
 	context.gpuDevice = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, false, NULL);
@@ -65,7 +70,7 @@ int main()
 		return SDL_FailCustom();
 	}
 
-	context.window = SDL_CreateWindow("SphericImageProjector", windowStartWidth, windowStartHeight, 0);
+	context.window = SDL_CreateWindow("SphericImageProjector", windowStartWidth, windowStartHeight, SDL_WINDOW_RESIZABLE);
 	if (context.window == NULL)
 	{
 		SDL_Log("CreateWindow failed: %s", SDL_GetError());
@@ -80,6 +85,13 @@ int main()
 	if(SDL_WindowSupportsGPUPresentMode(context.gpuDevice, context.window, SDL_GPU_PRESENTMODE_IMMEDIATE))
 	{
 		//SDL_SetGPUSwapchainParameters(context.gpuDevice, context.window, SDL_GPU_SWAPCHAINCOMPOSITION_SDR, SDL_GPU_PRESENTMODE_IMMEDIATE);
+	}
+
+	std::string fontPath = std::string(context.basePath) + "Inter-VariableFont.ttf";
+	TTF_Font* font = TTF_OpenFont(fontPath.c_str(), 36);
+	if (!font)
+	{
+		return SDL_FailCustom();
 	}
 
 	//imgui initialize
@@ -110,7 +122,16 @@ int main()
 
 	camera = Camera(glm::vec3(0,0,0), glm::vec3(0), glm::vec3(0, 0, 0), 70, windowStartWidth, windowStartHeight, 0.1f, 10000.0f);
 
+	std::string north = "North";
+	std::string east = "East";
+	std::string south = "South";
+	std::string west = "West";
+
 	sipManager.Initalize(&context, 100, 0);
+	sipManager.LoadImage(TTF_RenderText_Solid(font, north.data(), north.length(), { 255,255,255 }), 180, 0, glm::vec2(2,2), -1, &context);
+	sipManager.LoadImage(TTF_RenderText_Solid(font, east.data(), east.length(), { 255,255,255 }), 270, 0, glm::vec2(2,2), -1, &context);
+	sipManager.LoadImage(TTF_RenderText_Solid(font, south.data(), south.length(), { 255,255,255 }), 0, 0, glm::vec2(2,2), -1, &context);
+	sipManager.LoadImage(TTF_RenderText_Solid(font, west.data(), west.length(), { 255,255,255 }), 90, 0, glm::vec2(2,2), -1, &context);
 	sipManager.LoadImage("M51.png", 74.76f, 71.7f, glm::vec2(3.41f, 2.28f), 31730, &context);
 	sipManager.LoadImage("M101.jpg", 54.55f, 67.85f, glm::vec2(3.41f, 2.28f), 32934, &context);
 	sipManager.LoadImage("uvCheck.jpg", 90, 90, glm::vec2(1.0f, 1.0f), 32934, &context);
@@ -145,6 +166,17 @@ int main()
 					lockMouse = !lockMouse;
 					SDL_SetWindowRelativeMouseMode(context.window, lockMouse);
 				}
+			}
+			if(event.window.type == SDL_EVENT_WINDOW_RESIZED)
+			{
+				int width, height;
+				SDL_GetWindowSize(context.window, &width, &height);
+				camera.width = width;
+				camera.height = height;
+
+				//there is probably a better way
+				context.backBuffer.Delete(&context);
+				context.backBuffer.CreateTexture(&context, SDL_GPU_TEXTURETYPE_2D, width, height, SDL_GPU_TEXTUREFORMAT_D16_UNORM, SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET);
 			}
 		}
 		if (quit)

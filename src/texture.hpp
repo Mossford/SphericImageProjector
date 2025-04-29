@@ -20,9 +20,11 @@ public:
     SDL_GPUTextureUsageFlags usage;
 
     Texture();
+    Texture(const Texture &other);
     void CreateTexture(AppContext* context, SDL_GPUTextureType type, int width, int height, SDL_GPUTextureFormat format, SDL_GPUTextureUsageFlags usage);
     void CreateSampler(AppContext* context, SDL_GPUSamplerCreateInfo samplerInfo);
     void LoadFromFile(AppContext* context, std::string file);
+    void CreateFromSurface(AppContext* context, SDL_Surface* image);
     void BindSampler(SDL_GPURenderPass* renderPass, int slot);
     void Delete(AppContext* context);
 };
