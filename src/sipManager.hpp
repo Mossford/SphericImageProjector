@@ -23,7 +23,7 @@ public:
     int currentImageCount;
 
     //roation in degress per second
-    const float earthRotationSpeed = 0.00382388888f * 60 * 60;
+    const float earthRotationSpeed = 0.00382388888f;
     //base latitude of images taken (will have to be adjusted so that each image will have its own and that will move where it should be, from the base)
     const float latitude = 45;
 
