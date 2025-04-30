@@ -1,14 +1,15 @@
 #pragma once
 
+#include <SDL3/SDL.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>
+
 #include "vertex.hpp"
-#include "app.hpp"
 #include "math.hpp"
 
-#include <SDL3/SDL.h>
+struct AppContext;
 
 class Mesh
 {

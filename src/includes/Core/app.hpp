@@ -4,6 +4,7 @@
 #include <imgui.h>
 #include "pipeline.hpp"
 #include "texture.hpp"
+#include "sipManager.hpp"
 
 const Uint32 windowStartWidth = 1920;
 const Uint32 windowStartHeight = 1080;
@@ -18,4 +19,6 @@ struct AppContext
     Texture backBuffer;
     Pipeline defaultPipeline;
     ImGuiIO* imguiIO;
+
+    SIPManager sipManager;
 };

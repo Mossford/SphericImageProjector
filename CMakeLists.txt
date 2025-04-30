@@ -36,15 +36,17 @@ add_executable(${EXECUTABLE_NAME})
 # Add your sources to the target
 target_sources(${EXECUTABLE_NAME} 
 PRIVATE 
-    ${CMAKE_SOURCE_DIR}/src/main.cpp
-    ${CMAKE_SOURCE_DIR}/src/mesh.cpp
-    ${CMAKE_SOURCE_DIR}/src/shader.cpp
-    ${CMAKE_SOURCE_DIR}/src/camera.cpp
-    ${CMAKE_SOURCE_DIR}/src/math.cpp
-    ${CMAKE_SOURCE_DIR}/src/pipeline.cpp
-    ${CMAKE_SOURCE_DIR}/src/texture.cpp
-    ${CMAKE_SOURCE_DIR}/src/sipManager.cpp
-    ${CMAKE_SOURCE_DIR}/src/sipImage.cpp
+    ${CMAKE_SOURCE_DIR}/src/Core/main.cpp
+    ${CMAKE_SOURCE_DIR}/src/Core/mesh.cpp
+    ${CMAKE_SOURCE_DIR}/src/Core/shader.cpp
+    ${CMAKE_SOURCE_DIR}/src/Core/camera.cpp
+    ${CMAKE_SOURCE_DIR}/src/Core/math.cpp
+    ${CMAKE_SOURCE_DIR}/src/Core/pipeline.cpp
+    ${CMAKE_SOURCE_DIR}/src/Core/texture.cpp
+    ${CMAKE_SOURCE_DIR}/src/Core/imguiUi.cpp
+
+    ${CMAKE_SOURCE_DIR}/src/SIP/sipManager.cpp
+    ${CMAKE_SOURCE_DIR}/src/SIP/sipImage.cpp
 )
 
 # Set C++ version
@@ -89,18 +91,23 @@ add_library(Libs STATIC
     ${CMAKE_SOURCE_DIR}/imgui/backends/imgui_impl_sdlgpu3.cpp
 )
 
-target_include_directories(Libs PUBLIC ${CMAKE_SOURCE_DIR}/imgui)
+target_include_directories(Libs PUBLIC
+    ${CMAKE_SOURCE_DIR}/src/includes/Core
+    ${CMAKE_SOURCE_DIR}/src/includes/SIP
+    ${CMAKE_SOURCE_DIR}/imgui
+    $<TARGET_PROPERTY:SDL3::SDL3,INTERFACE_INCLUDE_DIRECTORIES>
+)
 
 # Link SDL to our executable. This also makes its include directory available to us. 
 target_link_libraries(${EXECUTABLE_NAME} PUBLIC 
-	SDL3_ttf::SDL3_ttf      # remove if you are not using SDL_ttf
-	SDL3_image::SDL3_image	# remove if you are not using SDL_image
-    SDL3::SDL3              # If using satelite libraries, SDL must be the last item in the list. 
     glm::glm
     glslang::glslang 
     glslang::SPIRV 
     glslang::glslang-default-resource-limits
     Libs
+    SDL3_ttf::SDL3_ttf      # remove if you are not using SDL_ttf
+	SDL3_image::SDL3_image	# remove if you are not using SDL_image
+    SDL3::SDL3              # If using satelite libraries, SDL must be the last item in the list.
 )
 
 # Dealing with assets

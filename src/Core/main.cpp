@@ -17,14 +17,13 @@
 #include "mesh.hpp"
 #include "vertex.hpp"
 #include "camera.hpp"
+#include "imguiUi.hpp"
 #include "sipManager.hpp"
 
 void Update();
 void Draw();
 void Init();
 void Quit();
-void ImguiUpdate();
-void ImguiDraw(SDL_GPUCommandBuffer* cmdBuf, SDL_GPURenderPass* renderPass);
 bool quit;
 
 int SDL_FailCustom()
@@ -44,8 +43,6 @@ float yMouse = 0;
 float frameTime;
 float pastTime;
 bool lockMouse = false;
-
-SIPManager sipManager;
 
 int main()
 {
@@ -127,14 +124,14 @@ int main()
 	std::string south = "South";
 	std::string west = "West";
 
-	sipManager.Initalize(&context, 100, 0);
-	sipManager.LoadImage(TTF_RenderText_Solid(font, north.data(), north.length(), { 255,255,255 }), 0, 0, glm::vec2(2,2), -1, &context);
-	sipManager.LoadImage(TTF_RenderText_Solid(font, east.data(), east.length(), { 255,255,255 }), 90, 0, glm::vec2(2,2), -1, &context);
-	sipManager.LoadImage(TTF_RenderText_Solid(font, south.data(), south.length(), { 255,255,255 }), 180, 0, glm::vec2(2,2), -1, &context);
-	sipManager.LoadImage(TTF_RenderText_Solid(font, west.data(), west.length(), { 255,255,255 }), 270, 0, glm::vec2(2,2), -1, &context);
-	sipManager.LoadImage("M51.png", 74.76f, 71.7f, glm::vec2(3.41f, 2.28f), 31730, &context);
-	sipManager.LoadImage("M101.jpg", 54.55f, 67.85f, glm::vec2(3.41f, 2.28f), 32934, &context);
-	sipManager.LoadImage("uvCheck.jpg", 90, 90, glm::vec2(1.0f, 1.0f), 32934, &context);
+	context.sipManager.Initalize(&context, 100, 0);
+	context.sipManager.LoadImage(TTF_RenderText_Solid(font, north.data(), north.length(), { 255,255,255 }), 0, 0, glm::vec2(2,2), -1, &context);
+	context.sipManager.LoadImage(TTF_RenderText_Solid(font, east.data(), east.length(), { 255,255,255 }), 90, 0, glm::vec2(2,2), -1, &context);
+	context.sipManager.LoadImage(TTF_RenderText_Solid(font, south.data(), south.length(), { 255,255,255 }), 180, 0, glm::vec2(2,2), -1, &context);
+	context.sipManager.LoadImage(TTF_RenderText_Solid(font, west.data(), west.length(), { 255,255,255 }), 270, 0, glm::vec2(2,2), -1, &context);
+	context.sipManager.LoadImage("M51.png", 74.76f, 71.7f, glm::vec2(3.41f, 2.28f), 31730, &context);
+	context.sipManager.LoadImage("M101.jpg", 54.55f, 67.85f, glm::vec2(3.41f, 2.28f), 32934, &context);
+	context.sipManager.LoadImage("uvCheck.jpg", 90, 90, glm::vec2(1.0f, 1.0f), 32934, &context);
 
 	while (!quit)
 	{
@@ -195,9 +192,9 @@ int main()
 
 void Update()
 {
-	ground.rotation.z += sipManager.earthRotationSpeed * frameTime;
+	ground.rotation.z += context.sipManager.earthRotationSpeed * frameTime;
 
-	sipManager.Update(&context, frameTime);
+	context.sipManager.Update(&context, frameTime);
 
 	if(lockMouse)
 	{
@@ -217,7 +214,7 @@ void Draw()
 	ImGui_ImplSDLGPU3_NewFrame();
     ImGui_ImplSDL3_NewFrame();
     ImGui::NewFrame();
-    ImguiUpdate();
+    MainImguiMenu(&context);
 
 	SDL_GPUCommandBuffer* cmdbuf = SDL_AcquireGPUCommandBuffer(context.gpuDevice);
 	if (cmdbuf == NULL)
@@ -263,58 +260,14 @@ void Draw()
 		ground.CreateModelMat();
 		ground.DrawMesh(&context, renderPass, cmdbuf, proj, view);
 
-		sipManager.Draw(&context, &camera, renderPass, cmdbuf);
+		context.sipManager.Draw(&context, &camera, renderPass, cmdbuf);
 
-		ImguiDraw(cmdbuf, renderPass);
+		DrawImgui(cmdbuf, renderPass);
 
 		SDL_EndGPURenderPass(renderPass);
 	}
 
 	SDL_SubmitGPUCommandBuffer(cmdbuf);
-}
-
-void ImguiUpdate()
-{
-	float curTime = SDL_GetTicks();
-
-	static ImGuiWindowFlags window_flags = 0;
-    window_flags |= ImGuiWindowFlags_NoTitleBar;
-    window_flags |= ImGuiWindowFlags_MenuBar;
-
-    ImGui::Begin("SpaceTesting", nullptr, window_flags);
-
-    //ImGui::Text("Version %s", EngVer.c_str());
-    ImGui::Text("%.3f ms/frame (%.1f FPS)", (1.0f / context.imguiIO->Framerate) * 1000.0f, context.imguiIO->Framerate);
-    //ImGui::Text("%u verts, %u indices (%u tris)", vertCount, indCount, indCount / 3);
-    //ImGui::Text("DrawCall Avg: (%.1f) DC/frame, DrawCall Total (%d)", drawCallAvg, DrawCallCount);
-    ImGui::Text("Time Open %.0f:%.2d", floorf(curTime / (60.0f * 1000.0f)), (int)(curTime / 1000.0f) % 60);
-    //ImGui::Text("Time taken for Update run %.2fms ", fabs(updateTime));
-    //ImGui::Text("Time taken for Fixed Update run %.2fms ", fabs(updateFixedTime));
-
-	ImGui::Spacing();
-	ImGui::Text("Number of loaded images: %d", sipManager.currentImageCount);
-
-	float totalTime = sipManager.baseTime;
-	int utcHours = floor(totalTime / 10000);
-	int utcMins = (int)floor(totalTime / 100) % 100;
-	int utcSeconds = (int)totalTime % 100;
-
-	int utcHoursCur = (int)(floorf(((curTime / 1000.0f + utcSeconds) / 60.0f + utcMins) / 60.0f) + utcHours);
-	int utcMinsCur = (int)(floorf((curTime / 1000.0f + utcSeconds) / 60.0f) + utcMins) % 60;
-	int utcSecondsCur = ((int)(curTime / 1000.0f + utcSeconds) % 60);
-
-	ImGui::Text("Base Time (UTC): %02d:%02d:%02d", utcHours, utcMins, utcSeconds);
-	ImGui::Text("Time From Base (UTC): %02d:%02d:%02d", utcHoursCur, utcMinsCur, utcSecondsCur);
-
-	ImGui::End();
-}
-
-void ImguiDraw(SDL_GPUCommandBuffer* cmdBuf, SDL_GPURenderPass* renderPass)
-{
-	ImGui::Render();
-	ImDrawData* draw_data = ImGui::GetDrawData();
-    ImGui_ImplSDLGPU3_PrepareDrawData(draw_data, cmdBuf);
-    ImGui_ImplSDLGPU3_RenderDrawData(draw_data, cmdBuf, renderPass);
 }
 
 void Quit()
@@ -323,7 +276,7 @@ void Quit()
 	context.backBuffer.Delete(&context);
 	ground.Delete(&context);
 
-	sipManager.Clean(&context);
+	context.sipManager.Clean(&context);
 
 	context.defaultPipeline.Delete(&context);
     SDL_ReleaseWindowFromGPUDevice(context.gpuDevice, context.window);
