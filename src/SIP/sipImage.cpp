@@ -1,4 +1,5 @@
 #include "sipImage.hpp"
+#include "app.hpp"
 
 SIPImage::SIPImage()
 {
@@ -8,10 +9,11 @@ SIPImage::SIPImage()
     angularSize = glm::vec2(0);
     time = 0;
     created = false;
+    applyTilt = true;
     rotation = glm::vec3(0);
 }
 
-void SIPImage::CreateFromFile(std::string file, float azimuth, float altitude, glm::vec2 angularSize, float time, float earthRotation, AppContext* context)
+void SIPImage::CreateFromFile(std::string file, float azimuth, float altitude, glm::vec2 angularSize, float time, AppContext* context)
 {
     //for some reason this is multipled by pi
     angularSize *=  M_PI / 180.0f;
@@ -27,14 +29,15 @@ void SIPImage::CreateFromFile(std::string file, float azimuth, float altitude, g
     mesh.BufferGens(context);
 
     //calculate the starting rotation
-    this->rotation.x = 23.4f - 45;
-    this->rotation.y -= earthRotation * time;
+    if(applyTilt)
+        this->rotation.x = 23.4f - context->sipManager.latitude;
+    this->rotation.y -= context->sipManager.earthRotationSpeed * time;
 
 
     created = true;
 }
 
-void SIPImage::CreateFromSurface(SDL_Surface* surface, float azimuth, float altitude, glm::vec2 angularSize, float time, float earthRotation, AppContext* context)
+void SIPImage::CreateFromSurface(SDL_Surface* surface, float azimuth, float altitude, glm::vec2 angularSize, float time, AppContext* context)
 {
     //for some reason this is multipled by pi
     angularSize *=  M_PI / 180.0f;
@@ -49,8 +52,58 @@ void SIPImage::CreateFromSurface(SDL_Surface* surface, float azimuth, float alti
     mesh.BufferGens(context);
 
     //calculate the starting rotation
-    //this->rotation.x = 23.4f;
-    this->rotation.y -= earthRotation * time;
+    if(applyTilt)
+        this->rotation.x = 23.4f - context->sipManager.latitude;
+    this->rotation.y -= context->sipManager.earthRotationSpeed * time;
+
+
+    created = true;
+}
+
+void SIPImage::CreateFromFile(std::string file, float azimuth, float altitude, glm::vec2 angularSize, float time, bool applyTilt, AppContext* context)
+{
+    //for some reason this is multipled by pi
+    angularSize *=  M_PI / 180.0f;
+
+    this->file = file;
+    this->azimuth = azimuth;
+    this->altitude = altitude;
+    this->angularSize = angularSize;
+    this->time = time;
+    this->applyTilt = applyTilt;
+
+    image.LoadFromFile(context, file);
+    mesh = Create2DQuadSpherical(glm::vec3(0), glm::vec3(azimuth, altitude, 1.0f), angularSize, 2);
+    mesh.BufferGens(context);
+
+    //calculate the starting rotation
+    if(applyTilt)
+        this->rotation.x = 23.4f - context->sipManager.latitude;
+    this->rotation.y -= context->sipManager.earthRotationSpeed * time;
+
+
+    created = true;
+}
+
+void SIPImage::CreateFromSurface(SDL_Surface* surface, float azimuth, float altitude, glm::vec2 angularSize, float time, bool applyTilt, AppContext* context)
+{
+    //for some reason this is multipled by pi
+    angularSize *=  M_PI / 180.0f;
+
+    this->azimuth = azimuth;
+    this->altitude = altitude;
+    this->angularSize = angularSize;
+    this->time = time;
+    this->applyTilt = applyTilt;
+
+    image.CreateFromSurface(context, surface);
+    mesh = Create2DQuadSpherical(glm::vec3(0), glm::vec3(azimuth, altitude, 1.0f), angularSize, 2);
+    mesh.BufferGens(context);
+
+    //calculate the starting rotation
+    if(applyTilt)
+        this->rotation.x = 23.4f - context->sipManager.latitude;
+    this->rotation.y -= context->sipManager.earthRotationSpeed * time;
 
 
     created = true;
@@ -84,10 +137,14 @@ void SIPImage::Delete(AppContext* context)
     created = false;
 }
 
-void SIPImage::ApplyRotation(float earthRotation, float latitude, float deltaTime)
+void SIPImage::ApplyRotation(float earthRotation, float earthOrbit, float latitude, float deltaTime, float time)
 {
-    //since images are taken parallel to the ground we dont need to add in a x rotation
-    //this->rotation.x = 23.4f - latitude;
+    if(applyTilt)
+    {
+        //add in rotation caused by the orbit which will rotate the pole
+        this->rotation.x = cos(earthOrbit * time * 180.0f / M_PI) * (23.4f - latitude);
+        this->rotation.z = sin(earthOrbit * time * 180.0f / M_PI) * (23.4f - latitude);
+    }
     this->rotation.y -= earthRotation * deltaTime;
 }
 

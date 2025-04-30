@@ -23,17 +23,21 @@ void MainImguiMenu(AppContext* context)
     ImGui::Spacing();
     ImGui::Text("Number of loaded images: %d", context->sipManager.currentImageCount);
 
+    double SIPtime = context->sipManager.time;
+
     float totalTime = context->sipManager.baseTime;
-    int utcHours = floor(totalTime / 10000);
-    int utcMins = (int)floor(totalTime / 100) % 100;
-    int utcSeconds = (int)totalTime % 100;
+    Uint64 utcHours = floor(totalTime / 10000);
+    Uint64 utcMins = (Uint64)floor(totalTime / 100) % 100;
+    Uint64 utcSeconds = (Uint64)totalTime % 100;
 
-    int utcHoursCur = (int)(floorf(((curTime / 1000.0f + utcSeconds) / 60.0f + utcMins) / 60.0f) + utcHours);
-    int utcMinsCur = (int)(floorf((curTime / 1000.0f + utcSeconds) / 60.0f) + utcMins) % 60;
-    int utcSecondsCur = ((int)(curTime / 1000.0f + utcSeconds) % 60);
+    Uint64 utcHoursCur = (Uint64)(floorf(((SIPtime + utcSeconds) / 60.0f + utcMins) / 60.0f) + utcHours);
+    Uint64 utcMinsCur = (Uint64)(floorf((SIPtime + utcSeconds) / 60.0f) + utcMins) % 60;
+    Uint64 utcSecondsCur = ((Uint64)(SIPtime + utcSeconds) % 60);
 
-    ImGui::Text("Base Time (UTC): %02d:%02d:%02d", utcHours, utcMins, utcSeconds);
-    ImGui::Text("Time From Base (UTC): %02d:%02d:%02d", utcHoursCur, utcMinsCur, utcSecondsCur);
+    ImGui::Text("Base Time (UTC): %02lu:%02lu:%02lu", utcHours, utcMins, utcSeconds);
+    ImGui::Text("Time From Base (UTC): %02lu:%02lu:%02lu", utcHoursCur, utcMinsCur, utcSecondsCur);
+
+    ImGui::InputFloat("TimeScale", &context->sipManager.speed, 1.0f, 10.0f, "%.1fx");
 
     ImGui::End();
 }

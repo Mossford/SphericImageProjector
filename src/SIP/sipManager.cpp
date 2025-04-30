@@ -2,7 +2,12 @@
 
 SIPManager::SIPManager()
 {
-
+    speed = 1.0f;
+    maxImages = 0;
+    baseTime = -1;
+    lastImage = 0;
+    currentImageCount = 0;
+    time = 0;
 }
 
 void SIPManager::Initalize(AppContext* context, int maxImages, float baseTime)
@@ -20,12 +25,14 @@ void SIPManager::Initalize(AppContext* context, int maxImages, float baseTime)
 
 void SIPManager::Update(AppContext* context, float deltaTime)
 {
+    time += deltaTime * speed;
+
     for(int i = 0; i < maxImages; i++)
     {
         if(!images[i].created)
           continue;
 
-        images[i].ApplyRotation(earthRotationSpeed, latitude, deltaTime);
+        images[i].ApplyRotation(earthRotationSpeed, earthOrbitSpeed, latitude, deltaTime * speed, time);
         images[i].UpdateMesh(context);
     }
 }
@@ -66,7 +73,7 @@ void SIPManager::LoadImage(std::string file, float azimuth, float altitude, glm:
     }
 
     SIPImage image;
-    image.CreateFromFile(file, azimuth, altitude, angularSize, deltaTime, earthRotationSpeed, context);
+    image.CreateFromFile(file, azimuth, altitude, angularSize, deltaTime, context);
     images[lastImage] = image;
     lastImage++;
     currentImageCount++;
@@ -92,7 +99,59 @@ void SIPManager::LoadImage(SDL_Surface* surface, float azimuth, float altitude, 
     }
 
     SIPImage image;
-    image.CreateFromSurface(surface, azimuth, altitude, angularSize, deltaTime, earthRotationSpeed, context);
+    image.CreateFromSurface(surface, azimuth, altitude, angularSize, deltaTime, context);
+    images[lastImage] = image;
+    lastImage++;
+    currentImageCount++;
+}
+
+void SIPManager::LoadImage(std::string file, float azimuth, float altitude, glm::vec2 angularSize, float time, bool applyTilt, AppContext* context)
+{
+    //cap at max images
+    if(lastImage >= maxImages)
+        return;
+
+    float deltaTime = 0;
+
+    //get base time
+    if(currentImageCount == 0 || baseTime == -1)
+    {
+        baseTime = time;
+    }
+    else if(time != baseTime && baseTime != -1)
+    {
+        //check for time passing
+        deltaTime = baseTime - time;
+    }
+
+    SIPImage image;
+    image.CreateFromFile(file, azimuth, altitude, angularSize, deltaTime, applyTilt, context);
+    images[lastImage] = image;
+    lastImage++;
+    currentImageCount++;
+}
+
+void SIPManager::LoadImage(SDL_Surface* surface, float azimuth, float altitude, glm::vec2 angularSize, float time, bool applyTilt, AppContext* context)
+{
+    //cap at max images
+    if(lastImage >= maxImages)
+        return;
+
+    float deltaTime = 0;
+
+    //get base time and reset the base time if the base time is -1
+    if(currentImageCount == 0 || baseTime == -1)
+    {
+        baseTime = time;
+    }
+    else if(time != baseTime && baseTime != -1)
+    {
+        //check for time passing
+        deltaTime = baseTime - time;
+    }
+
+    SIPImage image;
+    image.CreateFromSurface(surface, azimuth, altitude, angularSize, deltaTime, applyTilt, context);
     images[lastImage] = image;
     lastImage++;
     currentImageCount++;

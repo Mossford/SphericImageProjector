@@ -125,10 +125,10 @@ int main()
 	std::string west = "West";
 
 	context.sipManager.Initalize(&context, 100, 0);
-	context.sipManager.LoadImage(TTF_RenderText_Solid(font, north.data(), north.length(), { 255,255,255 }), 0, 0, glm::vec2(2,2), -1, &context);
-	context.sipManager.LoadImage(TTF_RenderText_Solid(font, east.data(), east.length(), { 255,255,255 }), 90, 0, glm::vec2(2,2), -1, &context);
-	context.sipManager.LoadImage(TTF_RenderText_Solid(font, south.data(), south.length(), { 255,255,255 }), 180, 0, glm::vec2(2,2), -1, &context);
-	context.sipManager.LoadImage(TTF_RenderText_Solid(font, west.data(), west.length(), { 255,255,255 }), 270, 0, glm::vec2(2,2), -1, &context);
+	context.sipManager.LoadImage(TTF_RenderText_Solid(font, north.data(), north.length(), { 255,255,255 }), 0, 0, glm::vec2(2,2), -1, false, &context);
+	context.sipManager.LoadImage(TTF_RenderText_Solid(font, east.data(), east.length(), { 255,255,255 }), 90, 0, glm::vec2(2,2), -1, false, &context);
+	context.sipManager.LoadImage(TTF_RenderText_Solid(font, south.data(), south.length(), { 255,255,255 }), 180, 0, glm::vec2(2,2), -1, false, &context);
+	context.sipManager.LoadImage(TTF_RenderText_Solid(font, west.data(), west.length(), { 255,255,255 }), 270, 0, glm::vec2(2,2), -1, false, &context);
 	context.sipManager.LoadImage("M51.png", 74.76f, 71.7f, glm::vec2(3.41f, 2.28f), 31730, &context);
 	context.sipManager.LoadImage("M101.jpg", 54.55f, 67.85f, glm::vec2(3.41f, 2.28f), 32934, &context);
 	context.sipManager.LoadImage("uvCheck.jpg", 90, 90, glm::vec2(1.0f, 1.0f), 32934, &context);
@@ -192,7 +192,7 @@ int main()
 
 void Update()
 {
-	ground.rotation.z += context.sipManager.earthRotationSpeed * frameTime;
+	ground.rotation.z += context.sipManager.earthRotationSpeed * frameTime * context.sipManager.speed;
 
 	context.sipManager.Update(&context, frameTime);
 
