@@ -23,9 +23,9 @@ float DegToUvY(float deg)
 void main()
 {          
     //for some reason the uv coord calculation only works in the shader
-    /*vec2 uv = vec2(0.5 + (atan(aPos.z, aPos.x) / (2.0 * PI)), 0.5 + (asin(aPos.y) / PI));
+    vec2 uv = vec2(0.5 + (atan(aPos.z, aPos.x) / (2.0 * PI)), 0.5 + (asin(aPos.y) / PI));
 
-    vec3 color = vec3(1.0);
+    /*vec3 color = vec3(1.0);
     color = texture(textureSamp, uv).rgb;
     for(int y = 90; y < 180; y += 5)
     {
@@ -41,7 +41,7 @@ void main()
 
     //color *= aNormal;
     vec3 color = vec3(1.0);
-    color = texture(textureSamp, aUV).rgb;
+    color = texture(textureSamp, uv).rgb;
 
     color *= 0.1;
     

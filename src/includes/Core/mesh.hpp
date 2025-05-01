@@ -39,7 +39,7 @@ public:
     void CreateSmoothNormals();
     void SubdivideTriangle();
     void Balloon(float delta, float speed, float percentage);
-    void ProjectToSphere(glm::mat4 rotationMat, glm::mat4 scaleMat, int subdivideNum);
+    void ProjectToSphere(glm::mat4 rotationMat, glm::mat4 scaleMat, int subdivideNum, float radius);
 };
 
 Mesh Create2DTriangle(glm::vec3 position, glm::vec3 rotation);

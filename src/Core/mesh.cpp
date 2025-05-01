@@ -271,7 +271,7 @@ void Mesh::Balloon(float delta = 0.0f, float speed = 0.0f, float percentage = 0.
     }
 }
 
-void Mesh::ProjectToSphere(glm::mat4 rotationMat, glm::mat4 scaleMat, int subdivideNum)
+void Mesh::ProjectToSphere(glm::mat4 rotationMat, glm::mat4 scaleMat, int subdivideNum, float radius)
 {
     Mesh mesh = Create2DQuad(position, glm::vec3(0));
 
@@ -303,7 +303,7 @@ void Mesh::ProjectToSphere(glm::mat4 rotationMat, glm::mat4 scaleMat, int subdiv
 
     for (int i = 0; i < mesh.vertexes.size(); ++i)
     {
-        mesh.vertexes[i].position = glm::normalize(mesh.vertexes[i].position);
+        mesh.vertexes[i].position = glm::normalize(mesh.vertexes[i].position) * radius;
     }
 
     vertexes = mesh.vertexes;

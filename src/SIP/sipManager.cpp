@@ -79,6 +79,33 @@ void SIPManager::LoadImage(std::string file, float azimuth, float altitude, glm:
     currentImageCount++;
 }
 
+void SIPManager::LoadImageAbsolute(std::string location, float azimuth, float altitude, glm::vec2 angularSize, float time, AppContext* context)
+{
+    //cap at max images
+    if(lastImage >= maxImages)
+        return;
+
+    float deltaTime = 0;
+
+    //get base time
+    if(currentImageCount == 0 || baseTime == -1)
+    {
+        baseTime = time;
+    }
+    else if(time != baseTime && baseTime != -1)
+    {
+        //check for time passing
+        deltaTime = baseTime - time;
+    }
+
+    SIPImage image;
+    image.CreateFromLocation(location, azimuth, altitude, angularSize, deltaTime, context);
+    images[lastImage] = image;
+    lastImage++;
+    currentImageCount++;
+}
+
+
 void SIPManager::LoadImage(SDL_Surface* surface, float azimuth, float altitude, glm::vec2 angularSize, float time, AppContext* context)
 {
     //cap at max images
@@ -130,6 +157,33 @@ void SIPManager::LoadImage(std::string file, float azimuth, float altitude, glm:
     lastImage++;
     currentImageCount++;
 }
+
+void SIPManager::LoadImageAbsolute(std::string location, float azimuth, float altitude, glm::vec2 angularSize, float time, bool applyTilt, AppContext* context)
+{
+    //cap at max images
+    if(lastImage >= maxImages)
+        return;
+
+    float deltaTime = 0;
+
+    //get base time
+    if(currentImageCount == 0 || baseTime == -1)
+    {
+        baseTime = time;
+    }
+    else if(time != baseTime && baseTime != -1)
+    {
+        //check for time passing
+        deltaTime = baseTime - time;
+    }
+
+    SIPImage image;
+    image.CreateFromLocation(location, azimuth, altitude, angularSize, deltaTime, applyTilt, context);
+    images[lastImage] = image;
+    lastImage++;
+    currentImageCount++;
+}
+
 
 void SIPManager::LoadImage(SDL_Surface* surface, float azimuth, float altitude, glm::vec2 angularSize, float time, bool applyTilt, AppContext* context)
 {

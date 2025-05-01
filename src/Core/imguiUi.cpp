@@ -1,16 +1,23 @@
 #include "imguiUi.hpp"
 #include "app.hpp"
 
+void SIPImageMenu(AppContext* context);
+void SIPImageCreationMenu(AppContext* context, bool* showMenu);
+void ShowError(std::string message);
+
+static std::string errorMessage;
 
 void MainImguiMenu(AppContext* context)
 {
+    static bool showSIPImageMenu = false;
+    static bool showSIPImageCreationMenu = false;
     float curTime = SDL_GetTicks();
 
     static ImGuiWindowFlags window_flags = 0;
     window_flags |= ImGuiWindowFlags_NoTitleBar;
     window_flags |= ImGuiWindowFlags_MenuBar;
 
-    ImGui::Begin("SpaceTesting", nullptr, window_flags);
+    ImGui::Begin("SphericImageProjector", nullptr, window_flags);
 
     //ImGui::Text("Version %s", EngVer.c_str());
     ImGui::Text("%.3f ms/frame (%.1f FPS)", (1.0f / context->imguiIO->Framerate) * 1000.0f, context->imguiIO->Framerate);
@@ -21,7 +28,7 @@ void MainImguiMenu(AppContext* context)
     //ImGui::Text("Time taken for Fixed Update run %.2fms ", fabs(updateFixedTime));
 
     ImGui::Spacing();
-    ImGui::Text("Number of loaded images: %d", context->sipManager.currentImageCount);
+    ImGui::Text("Number of loaded images: %d / %d", context->sipManager.currentImageCount, context->sipManager.maxImages);
 
     double SIPtime = context->sipManager.time;
 
@@ -44,6 +51,26 @@ void MainImguiMenu(AppContext* context)
 
     ImGui::InputFloat("TimeScale", &context->sipManager.speed, 1.0f, 10.0f, "%.1fx");
 
+    if (ImGui::BeginMenuBar())
+    {
+        if (ImGui::BeginMenu("Menus"))
+        {
+            ImGui::MenuItem("SIPImageMenu", NULL, &showSIPImageMenu);
+            ImGui::MenuItem("SIPImageCreationMenu", NULL, &showSIPImageCreationMenu);
+            ImGui::EndMenu();
+        }
+        ImGui::EndMenuBar();
+    }
+
+    if(showSIPImageMenu)
+    {
+        SIPImageMenu(context);
+    }
+    if(showSIPImageCreationMenu)
+    {
+        SIPImageCreationMenu(context, &showSIPImageCreationMenu);
+    }
+
     ImGui::End();
 }
 
@@ -53,4 +80,144 @@ void DrawImgui(SDL_GPUCommandBuffer* cmdBuf, SDL_GPURenderPass* renderPass)
     ImDrawData* draw_data = ImGui::GetDrawData();
     ImGui_ImplSDLGPU3_PrepareDrawData(draw_data, cmdBuf);
     ImGui_ImplSDLGPU3_RenderDrawData(draw_data, cmdBuf, renderPass);
+}
+
+void SIPImageMenu(AppContext* context)
+{
+    ImGui::Begin("SIPImageMenu");
+    ImGui::SetWindowSize({1280 / 2, 720 / 2}, ImGuiCond_Once);
+
+    float width = ImGui::GetWindowWidth();
+    float height = ImGui::GetWindowHeight();
+
+    if (ImGui::TreeNode("Images"))
+    {
+        for (unsigned int i = 0; i < context->sipManager.currentImageCount; i++)
+        {
+            if (ImGui::TreeNode((void*)(intptr_t)i, "Image %d", i))
+            {
+                ImGui::Image(ImTextureID(&context->sipManager.images[i].image.samplerBinding), {1280 / 2, 720 / 2}, {1,1}, {0,0});
+                ImGui::TreePop();
+            }
+        }
+        ImGui::TreePop();
+    }
+
+    ImGui::End();
+}
+
+void SIPImageCreationMenu(AppContext* context, bool* showMenu)
+{
+    static bool absolutePath = false;
+    static char file[128];
+    static float azimuth = 0.0f;
+    static float altitude = 0.0f;
+    static glm::vec2 angularSize = glm::vec2(0.0f);
+    static int timeSeconds = 0;
+    static int timeMins = 0;
+    static int timeHours = 0;
+    static bool applyTilt = true;
+
+    ImGui::Begin("SIPImageCreator");
+    ImGui::SetWindowSize({300, 400}, ImGuiCond_Once);
+
+    if(ImGui::RadioButton("AbsolutePath", absolutePath))
+    {
+        absolutePath = !absolutePath;
+    }
+
+    if(!absolutePath)
+        ImGui::InputText("File name", file, 128);
+    else
+        ImGui::InputText("Path", file, 128);
+
+    ImGui::InputFloat("Azimuth", &azimuth, 0.1f, 1.0f, "%.2f");
+    azimuth = std::min(std::max(azimuth, 0.0f), 360.0f);
+    ImGui::InputFloat("Altitude", &altitude, 0.1f, 1.0f, "%.2f");
+    azimuth = std::min(std::max(altitude, 0.0f), 90.0f);
+
+    ImGui::InputFloat2("Angular Size", glm::value_ptr(angularSize), "%.2f");
+    ImGui::InputInt("Time (Seconds)", &timeSeconds, 1.0f, 1.0f);
+    ImGui::InputInt("Time (Minutes)", &timeMins, 1.0f, 1.0f);
+    ImGui::InputInt("Time (Hours)", &timeHours, 1.0f, 1.0f);
+
+    float time = (timeHours * 10000) + (timeMins * 100) + timeSeconds;
+
+    if(ImGui::RadioButton("ApplyTilt", applyTilt))
+    {
+        applyTilt = !applyTilt;
+    }
+
+    if(ImGui::Button("Add Image"))
+    {
+        bool allowCreation = true;
+
+        std::string path = std::string(context->basePath) + std::string(file);
+
+        //check if the file exsists
+        if(!absolutePath)
+        {
+            if(!SDL_GetPathInfo(path.c_str(), NULL))
+            {
+                std::string text;
+                ShowError("File not found " + std::string(file));
+                allowCreation = false;
+            }
+        }
+        else
+        {
+            if(!SDL_GetPathInfo(path.c_str(), NULL))
+            {
+                ShowError("Path not found " + path);
+                allowCreation = false;
+            }
+        }
+        if(std::string(file).size() == 0)
+        {
+            ShowError("File/Path is empty");
+            allowCreation = false;
+        }
+
+        if(allowCreation)
+        {
+            if(absolutePath)
+            {
+                if(!applyTilt)
+                    context->sipManager.LoadImageAbsolute(std::string(file), azimuth, altitude, angularSize, time, context);
+                else
+                    context->sipManager.LoadImageAbsolute(std::string(file), azimuth, altitude, angularSize, time, applyTilt, context);
+            }
+            else
+            {
+                if(!applyTilt)
+                    context->sipManager.LoadImage(std::string(file), azimuth, altitude, angularSize, time, context);
+                else
+                    context->sipManager.LoadImage(std::string(file), azimuth, altitude, angularSize, time, applyTilt, context);
+            }
+
+            *showMenu = false;
+        }
+    }
+
+    if (ImGui::BeginPopupModal("Error", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Text("%s", errorMessage.c_str());
+        ImGui::Separator();
+
+        if (ImGui::Button("OK", ImVec2(120, 0)))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+
+    ImGui::End();
+}
+
+
+void ShowError(std::string message)
+{
+    ImGui::OpenPopup("Error");
+    errorMessage = message;
 }

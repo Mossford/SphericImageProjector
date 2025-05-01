@@ -37,6 +37,31 @@ void SIPImage::CreateFromFile(std::string file, float azimuth, float altitude, g
     created = true;
 }
 
+void SIPImage::CreateFromLocation(std::string location, float azimuth, float altitude, glm::vec2 angularSize, float time, AppContext* context)
+{
+    //for some reason this is multipled by pi
+    angularSize *=  M_PI / 180.0f;
+
+    this->file = location;
+    this->azimuth = azimuth;
+    this->altitude = altitude;
+    this->angularSize = angularSize;
+    this->time = time;
+
+    image.LoadFromLocation(context, file);
+    mesh = Create2DQuadSpherical(glm::vec3(0), glm::vec3(azimuth, altitude, 1.0f), angularSize, 2);
+    mesh.BufferGens(context);
+
+    //calculate the starting rotation
+    if(applyTilt)
+        this->rotation.x = context->sipManager.latitude;
+    this->rotation.y -= (context->sipManager.earthRotationSpeed + context->sipManager.earthOrbitSpeed) * time;
+
+
+    created = true;
+}
+
+
 void SIPImage::CreateFromSurface(SDL_Surface* surface, float azimuth, float altitude, glm::vec2 angularSize, float time, AppContext* context)
 {
     //for some reason this is multipled by pi
@@ -85,6 +110,32 @@ void SIPImage::CreateFromFile(std::string file, float azimuth, float altitude, g
     created = true;
 }
 
+void SIPImage::CreateFromLocation(std::string location, float azimuth, float altitude, glm::vec2 angularSize, float time, bool applyTilt, AppContext* context)
+{
+    //for some reason this is multipled by pi
+    angularSize *=  M_PI / 180.0f;
+
+    this->file = location;
+    this->azimuth = azimuth;
+    this->altitude = altitude;
+    this->angularSize = angularSize;
+    this->time = time;
+    this->applyTilt = applyTilt;
+
+    image.LoadFromLocation(context, file);
+    mesh = Create2DQuadSpherical(glm::vec3(0), glm::vec3(azimuth, altitude, 1.0f), angularSize, 2);
+    mesh.BufferGens(context);
+
+    //calculate the starting rotation
+    if(applyTilt)
+        this->rotation.x = context->sipManager.latitude;
+    this->rotation.y -= (context->sipManager.earthRotationSpeed + context->sipManager.earthOrbitSpeed) * time;
+
+
+    created = true;
+}
+
+
 void SIPImage::CreateFromSurface(SDL_Surface* surface, float azimuth, float altitude, glm::vec2 angularSize, float time, bool applyTilt, AppContext* context)
 {
     //for some reason this is multipled by pi
@@ -119,7 +170,7 @@ void SIPImage::UpdateMesh(AppContext* context)
     rotationMat = glm::rotate(rotationMat, rotation.y * degToRad, glm::vec3(0.0f,1.0f,0.0f));
     rotationMat = glm::rotate(rotationMat, rotation.z * degToRad, glm::vec3(0.0f,0.0f,1.0f));
 
-    mesh.ProjectToSphere(rotationMat, glm::scale(glm::mat4(1.0f), glm::vec3(angularSize.x, angularSize.y, 1.0f)), 2);
+    mesh.ProjectToSphere(rotationMat, glm::scale(glm::mat4(1.0f), glm::vec3(angularSize.x, angularSize.y, 1.0f)), 2, context->sipManager.radius);
     mesh.ReGenBuffer(context);
 }
 

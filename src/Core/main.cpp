@@ -112,8 +112,8 @@ int main()
 
 	m51.LoadFromFile(&context, "uvCheck.jpg");
 
-	ground = Create2DQuad(glm::vec3(0,-0.05f,0), glm::vec3(90, 0, 0));
-	ground.scale = glm::vec3(3);
+	ground = CreateCubeSphereMesh(glm::vec3(0,-51.5f,0), glm::vec3(0, 0, 0), 3);
+	ground.scale = glm::vec3(1000, 50, 1000);
 	ground.CreateSmoothNormals();
 	ground.BufferGens(&context);
 
@@ -207,14 +207,15 @@ void Update()
 		pastXMouse = xMouse;
 		pastYMouse = yMouse;
 	}
+
+	ImGui_ImplSDLGPU3_NewFrame();
+	ImGui_ImplSDL3_NewFrame();
+	ImGui::NewFrame();
+	MainImguiMenu(&context);
 }
 
 void Draw()
 {
-	ImGui_ImplSDLGPU3_NewFrame();
-    ImGui_ImplSDL3_NewFrame();
-    ImGui::NewFrame();
-    MainImguiMenu(&context);
 
 	SDL_GPUCommandBuffer* cmdbuf = SDL_AcquireGPUCommandBuffer(context.gpuDevice);
 	if (cmdbuf == NULL)

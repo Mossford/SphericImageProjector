@@ -26,8 +26,10 @@ public:
 
     SIPImage();
     void CreateFromFile(std::string file, float azimuth, float altitude, glm::vec2 angularSize, float time, AppContext* context);
+    void CreateFromLocation(std::string location, float azimuth, float altitude, glm::vec2 angularSize, float time, AppContext* context);
     void CreateFromSurface(SDL_Surface* surface, float azimuth, float altitude, glm::vec2 angularSize, float time, AppContext* context);
     void CreateFromFile(std::string file, float azimuth, float altitude, glm::vec2 angularSize, float time, bool applyTilt, AppContext* context);
+    void CreateFromLocation(std::string location, float azimuth, float altitude, glm::vec2 angularSize, float time, bool applyTilt, AppContext* context);
     void CreateFromSurface(SDL_Surface* surface, float azimuth, float altitude, glm::vec2 angularSize, float time, bool applyTilt, AppContext* context);
     void UpdateMesh(AppContext* context);
     void DrawMesh(AppContext* context, Pipeline* pipeline, glm::mat4 proj, glm::mat4 view, SDL_GPURenderPass* renderPass, SDL_GPUCommandBuffer* cmbBuf);
