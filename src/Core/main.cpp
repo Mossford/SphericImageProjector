@@ -117,7 +117,7 @@ int main()
 	ground.CreateSmoothNormals();
 	ground.BufferGens(&context);
 
-	camera = Camera(glm::vec3(0,0,0), glm::vec3(0, 180, 0), glm::vec3(0, 0, 0), 70, windowStartWidth, windowStartHeight, 0.1f, 10000.0f);
+	camera = Camera(glm::vec3(0,0,0), glm::vec3(0, 0, 0), glm::vec3(0, 0, 0), 70, windowStartWidth, windowStartHeight, 0.1f, 10000.0f);
 
 	std::string north = "North";
 	std::string east = "East";

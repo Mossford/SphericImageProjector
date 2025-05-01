@@ -20,9 +20,9 @@ Camera::Camera(glm::vec3 position, glm::vec3 rotation, glm::vec3 target, float f
 glm::vec3 Camera::GetCameraDir()
 {
     float degToRad = M_PI / 180.0f;
-    target.x = -sin(rotation.x * degToRad) * cos(rotation.y * degToRad);
+    target.x = sin(rotation.x * degToRad) * cos(rotation.y * degToRad);
     target.y = -sin(rotation.y * degToRad);
-    target.z = cos(rotation.x * degToRad) * cos(rotation.y * degToRad);
+    target.z = -cos(rotation.x * degToRad) * cos(rotation.y * degToRad);
     return glm::normalize(target);
 }
 
