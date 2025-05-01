@@ -3,6 +3,7 @@
 #include <string>
 #include "texture.hpp"
 #include "mesh.hpp"
+#include "pipeline.hpp"
 
 struct AppContext;
 
@@ -29,7 +30,7 @@ public:
     void CreateFromFile(std::string file, float azimuth, float altitude, glm::vec2 angularSize, float time, bool applyTilt, AppContext* context);
     void CreateFromSurface(SDL_Surface* surface, float azimuth, float altitude, glm::vec2 angularSize, float time, bool applyTilt, AppContext* context);
     void UpdateMesh(AppContext* context);
-    void DrawMesh(AppContext* context, glm::mat4 proj, glm::mat4 view, SDL_GPURenderPass* renderPass, SDL_GPUCommandBuffer* cmbBuf);
+    void DrawMesh(AppContext* context, Pipeline* pipeline, glm::mat4 proj, glm::mat4 view, SDL_GPURenderPass* renderPass, SDL_GPUCommandBuffer* cmbBuf);
     void Delete(AppContext* context);
 
     //applys the earths rotation

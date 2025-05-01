@@ -27,7 +27,7 @@ SDL_GPUShader* CompileShaderProgram(std::string location, std::string file, SDL_
 	else
 	{
 		SDL_Log("Invalid shader stage!");
-		SDL_Log(SDL_GetError());
+		SDL_Log("%s", SDL_GetError());
         return NULL;
 	}
 
@@ -43,7 +43,7 @@ SDL_GPUShader* CompileShaderProgram(std::string location, std::string file, SDL_
 	if (code == NULL)
 	{
 		SDL_Log("Failed to load shader from disk! %s", (location + file).c_str());
-		SDL_Log(SDL_GetError());
+		SDL_Log("%s", SDL_GetError());
 		return NULL;
 	}
 
@@ -77,7 +77,7 @@ SDL_GPUShader* CompileShaderProgram(std::string location, std::string file, SDL_
 	if (shader == NULL)
 	{
 		SDL_Log("Failed to create shader!");
-		SDL_Log(SDL_GetError());
+		SDL_Log("%s", SDL_GetError());
 		SDL_free(code);
 		return NULL;
 	}
@@ -102,7 +102,7 @@ void Shader::CompileShader(std::string location, SDL_GPUDevice* device, ShaderSe
 	else
 	{
 		SDL_Log("Invalid shader stage!");
-		SDL_Log(SDL_GetError());
+		SDL_Log("%s", SDL_GetError());
         return;
 	}
 
@@ -118,7 +118,7 @@ void Shader::CompileShader(std::string location, SDL_GPUDevice* device, ShaderSe
 	if (code == NULL)
 	{
 		SDL_Log("Failed to load shader from disk! %s", (location + settings.file).c_str());
-		SDL_Log(SDL_GetError());
+		SDL_Log("%s", SDL_GetError());
 		return;
 	}
 
@@ -152,7 +152,7 @@ void Shader::CompileShader(std::string location, SDL_GPUDevice* device, ShaderSe
 	if (shader == NULL)
 	{
 		SDL_Log("Failed to create shader!");
-		SDL_Log(SDL_GetError());
+		SDL_Log("%s", SDL_GetError());
 		SDL_free(code);
 		return;
 	}
@@ -162,45 +162,58 @@ void Shader::CompileShader(std::string location, SDL_GPUDevice* device, ShaderSe
 	SDL_free(code);
 }   
 
-void Shader::setBool(std::string name, bool value)
-{         
-    
-}
-void Shader::setInt(std::string name, int value)
-{ 
-    
-}
-void Shader::setFloat(std::string name, float value)
-{ 
-    
-}
-void Shader::setVec2(std::string name, glm::vec2 value)
-{ 
-    
-}
-void Shader::setVec2(std::string name, float x, float y)
-{ 
-    
-}
-void Shader::setVec3(std::string name, glm::vec3 value)
-{ 
-    
-}
-void Shader::setVec3(std::string name, float x, float y, float z)
-{ 
-    
-}
-void Shader::setVec4(std::string name, glm::vec4 value)
-{ 
-    
-}
-void Shader::setVec4(std::string name, float x, float y, float z, float w)
-{ 
-    
-}
-void Shader::setMat4(std::string name, glm::mat4 mat)
+void Shader::AddBool(bool value)
 {
-    
+	Uint8* data = (Uint8*)&value;
+	buffer.insert(buffer.end(), data, data + sizeof(bool));
+}
+
+void Shader::AddInt(int value)
+{
+	Uint8* data = (Uint8*)&value;
+	buffer.insert(buffer.end(), data, data + sizeof(int));
+}
+
+void Shader::AddFloat(float value)
+{
+	Uint8* data = (Uint8*)&value;
+	buffer.insert(buffer.end(), data, data + sizeof(float));
+}
+
+void Shader::AddVec2(glm::vec2 value)
+{
+	Uint8* data = (Uint8*)glm::value_ptr(value);
+	buffer.insert(buffer.end(), data, data + sizeof(glm::vec2));
+}
+
+void Shader::AddVec3(glm::vec3 value)
+{
+	Uint8* data = (Uint8*)glm::value_ptr(value);
+	buffer.insert(buffer.end(), data, data + sizeof(glm::vec3));
+}
+
+void Shader::AddVec4(glm::vec4 value)
+{
+	Uint8* data = (Uint8*)glm::value_ptr(value);
+	buffer.insert(buffer.end(), data, data + sizeof(glm::vec4));
+}
+
+void Shader::AddMat4(glm::mat4 mat)
+{
+	Uint8* data = (Uint8*)glm::value_ptr(mat);
+	buffer.insert(buffer.end(), data, data + sizeof(glm::mat4));
+}
+
+void Shader::BindVertexUniformData(SDL_GPUCommandBuffer* cmbBuf, int slot)
+{
+	SDL_PushGPUVertexUniformData(cmbBuf, slot, buffer.data(), buffer.size());
+	buffer.clear();
+}
+
+void Shader::BindFragmentUniformData(SDL_GPUCommandBuffer* cmbBuf, int slot)
+{
+	SDL_PushGPUFragmentUniformData(cmbBuf, slot, buffer.data(), buffer.size());
+	buffer.clear();
 }
 
 SpirVBinary compileShaderToSPIRV_Vulkan(glslang_stage_t stage, const char* shaderSource, const char* fileName)

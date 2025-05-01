@@ -48,7 +48,7 @@ void SIPManager::Draw(AppContext* context, Camera* camera, SDL_GPURenderPass* re
         if(!images[i].created)
             continue;
 
-        images[i].DrawMesh(context, camera->GetProjMat(), camera->GetViewMat(), renderPass, cmbBuf);
+        images[i].DrawMesh(context, &pipeline, camera->GetProjMat(), camera->GetViewMat(), renderPass, cmbBuf);
     }
 }
 

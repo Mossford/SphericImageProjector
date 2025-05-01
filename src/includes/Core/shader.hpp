@@ -3,10 +3,12 @@
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_gpu.h>
 #include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <typeinfo>
 #include <cstring>
 #include <string>
+#include <vector>
 #include <glslang/Include/glslang_c_interface.h>
 #include <glslang/Public/resource_limits_c.h>
 
@@ -31,21 +33,25 @@ struct ShaderSettings
 
 class Shader
 {
+private:
+
+    //the combined data to be passed as a uniform
+    std::vector<Uint8> buffer;
+
 public:
 
     SDL_GPUShader* shader;
     Shader();
     void CompileShader(std::string location, SDL_GPUDevice* device, ShaderSettings settings, bool parse);
-    void setBool(std::string name, bool value);
-    void setInt(std::string name, int value);
-    void setFloat(std::string name, float value);
-    void setVec2(std::string name, glm::vec2 value);
-    void setVec2(std::string name, float x, float y);
-    void setVec3(std::string name, glm::vec3 value);
-    void setVec3(std::string name, float x, float y, float z);
-    void setVec4(std::string name, glm::vec4 value);
-    void setVec4(std::string name, float x, float y, float z, float w);
-    void setMat4(std::string name, glm::mat4 mat);
+    void AddBool(bool value);
+    void AddInt(int value);
+    void AddFloat(float value);
+    void AddVec2(glm::vec2 value);
+    void AddVec3(glm::vec3 value);
+    void AddVec4(glm::vec4 value);
+    void AddMat4(glm::mat4 mat);
+    void BindVertexUniformData(SDL_GPUCommandBuffer* cmbBuf, int slot);
+    void BindFragmentUniformData(SDL_GPUCommandBuffer* cmbBuf, int slot);
     
 };
 

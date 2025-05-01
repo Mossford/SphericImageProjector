@@ -117,7 +117,7 @@ int main()
 	ground.CreateSmoothNormals();
 	ground.BufferGens(&context);
 
-	camera = Camera(glm::vec3(0,0,0), glm::vec3(0), glm::vec3(0, 0, 0), 70, windowStartWidth, windowStartHeight, 0.1f, 10000.0f);
+	camera = Camera(glm::vec3(0,0,0), glm::vec3(0, 180, 0), glm::vec3(0, 0, 0), 70, windowStartWidth, windowStartHeight, 0.1f, 10000.0f);
 
 	std::string north = "North";
 	std::string east = "East";
@@ -258,7 +258,10 @@ void Draw()
 		glm::mat4 view = camera.GetViewMat();
 		
 		ground.CreateModelMat();
-		ground.DrawMesh(&context, renderPass, cmdbuf, proj, view);
+		glm::mat4 combineMat = proj * view * ground.modelMatrix;
+		context.defaultPipeline.vertexShader.AddMat4(combineMat);
+		context.defaultPipeline.vertexShader.BindVertexUniformData(cmdbuf, 0);
+		ground.DrawMesh(&context, renderPass, cmdbuf);
 
 		context.sipManager.Draw(&context, &camera, renderPass, cmdbuf);
 

@@ -30,7 +30,7 @@ void SIPImage::CreateFromFile(std::string file, float azimuth, float altitude, g
 
     //calculate the starting rotation
     if(applyTilt)
-        this->rotation.x = 23.4f - context->sipManager.latitude;
+        this->rotation.x = context->sipManager.latitude;
     this->rotation.y -= context->sipManager.earthRotationSpeed * time;
 
 
@@ -53,7 +53,7 @@ void SIPImage::CreateFromSurface(SDL_Surface* surface, float azimuth, float alti
 
     //calculate the starting rotation
     if(applyTilt)
-        this->rotation.x = 23.4f - context->sipManager.latitude;
+        this->rotation.x = context->sipManager.latitude;
     this->rotation.y -= context->sipManager.earthRotationSpeed * time;
 
 
@@ -78,7 +78,7 @@ void SIPImage::CreateFromFile(std::string file, float azimuth, float altitude, g
 
     //calculate the starting rotation
     if(applyTilt)
-        this->rotation.x = 23.4f - context->sipManager.latitude;
+        this->rotation.x = context->sipManager.latitude;
     this->rotation.y -= context->sipManager.earthRotationSpeed * time;
 
 
@@ -102,7 +102,7 @@ void SIPImage::CreateFromSurface(SDL_Surface* surface, float azimuth, float alti
 
     //calculate the starting rotation
     if(applyTilt)
-        this->rotation.x = 23.4f - context->sipManager.latitude;
+        this->rotation.x = context->sipManager.latitude;
     this->rotation.y -= context->sipManager.earthRotationSpeed * time;
 
 
@@ -123,11 +123,13 @@ void SIPImage::UpdateMesh(AppContext* context)
     mesh.ReGenBuffer(context);
 }
 
-void SIPImage::DrawMesh(AppContext* context, glm::mat4 proj, glm::mat4 view, SDL_GPURenderPass* renderPass, SDL_GPUCommandBuffer* cmbBuf)
+void SIPImage::DrawMesh(AppContext* context, Pipeline* pipeline, glm::mat4 proj, glm::mat4 view, SDL_GPURenderPass* renderPass, SDL_GPUCommandBuffer* cmbBuf)
 {
     mesh.modelMatrix = glm::mat4(1.0f);
     image.BindSampler(renderPass, 0);
-    mesh.DrawMesh(context, renderPass, cmbBuf, proj, view);
+    pipeline->vertexShader.AddMat4(proj * view * mesh.modelMatrix);
+    pipeline->vertexShader.BindVertexUniformData(cmbBuf, 0);
+    mesh.DrawMesh(context, renderPass, cmbBuf);
 }
 
 
@@ -141,10 +143,8 @@ void SIPImage::ApplyRotation(float earthRotation, float earthOrbit, float latitu
 {
     if(applyTilt)
     {
-        //add in rotation caused by the orbit which will rotate the pole
-        this->rotation.x = cos(earthOrbit * time * 180.0f / M_PI) * (23.4f - latitude);
-        this->rotation.z = sin(earthOrbit * time * 180.0f / M_PI) * (23.4f - latitude);
+        this->rotation.x = latitude;
     }
-    this->rotation.y -= earthRotation * deltaTime;
+    this->rotation.y -= (earthOrbit + earthRotation) * deltaTime;
 }
 

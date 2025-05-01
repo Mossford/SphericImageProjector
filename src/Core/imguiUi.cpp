@@ -35,7 +35,12 @@ void MainImguiMenu(AppContext* context)
     Uint64 utcSecondsCur = ((Uint64)(SIPtime + utcSeconds) % 60);
 
     ImGui::Text("Base Time (UTC): %02lu:%02lu:%02lu", utcHours, utcMins, utcSeconds);
-    ImGui::Text("Time From Base (UTC): %02lu:%02lu:%02lu", utcHoursCur, utcMinsCur, utcSecondsCur);
+    if(utcHoursCur >= 24.0f)
+    {
+        ImGui::Text("Time From Base (UTC): %02lu:%02lu:%02lu:%02lu", utcHoursCur / 24, utcHoursCur % 24, utcMinsCur, utcSecondsCur);
+    }
+    else
+        ImGui::Text("Time From Base (UTC): %02lu:%02lu:%02lu", utcHoursCur, utcMinsCur, utcSecondsCur);
 
     ImGui::InputFloat("TimeScale", &context->sipManager.speed, 1.0f, 10.0f, "%.1fx");
 

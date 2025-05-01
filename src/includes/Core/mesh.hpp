@@ -31,7 +31,7 @@ public:
     Mesh(std::vector<Vertex> vertexes, std::vector<unsigned int> indices, glm::vec3 position, glm::vec3 rotation, float scale);
     void BufferGens(AppContext* context);
     void ReGenBuffer(AppContext* context);
-    void DrawMesh(AppContext* context, SDL_GPURenderPass* renderPass, SDL_GPUCommandBuffer* cmbBuf, glm::mat4 proj, glm::mat4 view);
+    void DrawMesh(AppContext* context, SDL_GPURenderPass* renderPass, SDL_GPUCommandBuffer* cmbBuf);
     void Delete(AppContext* context);
     void CreateModelMat();
     void CreateRotationMat();

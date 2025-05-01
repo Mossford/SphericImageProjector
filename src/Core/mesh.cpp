@@ -105,10 +105,8 @@ void Mesh::ReGenBuffer(AppContext* context)
     BufferGens(context);
 }
 
-void Mesh::DrawMesh(AppContext* context, SDL_GPURenderPass* renderPass, SDL_GPUCommandBuffer* cmbBuf, glm::mat4 proj, glm::mat4 view)
+void Mesh::DrawMesh(AppContext* context, SDL_GPURenderPass* renderPass, SDL_GPUCommandBuffer* cmbBuf)
 {
-    glm::mat4 combineMat = proj * view * modelMatrix;
-
     SDL_GPUBufferBinding bufBindVert = {};
 	bufBindVert.buffer = vertexBuffer;
 	bufBindVert.offset = 0;
@@ -117,7 +115,6 @@ void Mesh::DrawMesh(AppContext* context, SDL_GPURenderPass* renderPass, SDL_GPUC
 	bufBindInd.buffer = indexBuffer;
 	bufBindInd.offset = 0;
     SDL_BindGPUIndexBuffer(renderPass, &bufBindInd, SDL_GPU_INDEXELEMENTSIZE_32BIT);
-    SDL_PushGPUVertexUniformData(cmbBuf, 0, glm::value_ptr(combineMat), sizeof(glm::mat4));
 	SDL_DrawGPUIndexedPrimitives(renderPass, indices.size(), 1, 0, 0, 0);
 }
 
