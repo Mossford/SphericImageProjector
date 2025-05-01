@@ -28,7 +28,7 @@ public:
     //roation in degress per second (from 15 degrees per hour)
     const float earthRotationSpeed = 0.00382388888f;
     //rotation in degrees per second of the orbit amount
-    const float earthOrbitSpeed = earthRotationSpeed / (365.0f * 24.0f);
+    const float earthOrbitSpeed = 0.00001141552f;
     //base latitude of images taken (will have to be adjusted so that each image will have its own and that will move where it should be, from the base)
     const float latitude = -45;
 

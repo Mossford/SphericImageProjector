@@ -31,7 +31,7 @@ void SIPImage::CreateFromFile(std::string file, float azimuth, float altitude, g
     //calculate the starting rotation
     if(applyTilt)
         this->rotation.x = context->sipManager.latitude;
-    this->rotation.y -= context->sipManager.earthRotationSpeed * time;
+    this->rotation.y -= (context->sipManager.earthRotationSpeed + context->sipManager.earthOrbitSpeed) * time;
 
 
     created = true;
@@ -54,7 +54,7 @@ void SIPImage::CreateFromSurface(SDL_Surface* surface, float azimuth, float alti
     //calculate the starting rotation
     if(applyTilt)
         this->rotation.x = context->sipManager.latitude;
-    this->rotation.y -= context->sipManager.earthRotationSpeed * time;
+    this->rotation.y -= (context->sipManager.earthRotationSpeed + context->sipManager.earthOrbitSpeed) * time;
 
 
     created = true;
@@ -79,7 +79,7 @@ void SIPImage::CreateFromFile(std::string file, float azimuth, float altitude, g
     //calculate the starting rotation
     if(applyTilt)
         this->rotation.x = context->sipManager.latitude;
-    this->rotation.y -= context->sipManager.earthRotationSpeed * time;
+    this->rotation.y -= (context->sipManager.earthRotationSpeed + context->sipManager.earthOrbitSpeed) * time;
 
 
     created = true;
@@ -103,7 +103,7 @@ void SIPImage::CreateFromSurface(SDL_Surface* surface, float azimuth, float alti
     //calculate the starting rotation
     if(applyTilt)
         this->rotation.x = context->sipManager.latitude;
-    this->rotation.y -= context->sipManager.earthRotationSpeed * time;
+    this->rotation.y -= (context->sipManager.earthRotationSpeed + context->sipManager.earthOrbitSpeed) * time;
 
 
     created = true;
