@@ -94,7 +94,7 @@ glm::vec2 ConvRotAxisToNonAxisEcliptic(glm::vec3 rotation, glm::vec2 ecliptic)
     glm::mat4 rotationMat = glm::mat4(1.0f);
     rotationMat = glm::rotate(rotationMat, rotation.x * degToRad, glm::vec3(1.0f,0.0f,0.0f));
     rotationMat = glm::rotate(rotationMat, rotation.y * degToRad, glm::vec3(0.0f,1.0f,0.0f));
-    rotationMat = glm::rotate(rotationMat, rotation.z, glm::vec3(0.0f,0.0f,1.0f));
+    rotationMat = glm::rotate(rotationMat, rotation.z * degToRad, glm::vec3(0.0f,0.0f,1.0f));
     rotationMat = glm::inverse(rotationMat);
 
     //treat the inputed ecliptic as if it was already rotated by the matrix and rotate it back to the "desired" location

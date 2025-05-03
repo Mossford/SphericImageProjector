@@ -262,7 +262,7 @@ void Draw()
 		glm::mat4 combineMat = proj * view * ground.modelMatrix;
 		context.defaultPipeline.vertexShader.AddMat4(combineMat);
 		context.defaultPipeline.vertexShader.BindVertexUniformData(cmdbuf, 0);
-		//ground.DrawMesh(&context, renderPass, cmdbuf);
+		ground.DrawMesh(&context, renderPass, cmdbuf);
 
 		context.sipManager.Draw(&context, &camera, renderPass, cmdbuf);
 
