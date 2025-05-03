@@ -24,6 +24,9 @@ public:
     //the last added image index
     int lastImage;
     int currentImageCount;
+    //"stack" of the deleted indexes
+    int* deletedIndexes;
+    int lastDeleted;
 
     //roation in degress per second (from 15 degrees per hour)
     const float earthRotationSpeed = 0.00382388888f;
@@ -44,6 +47,6 @@ public:
     void LoadImage(std::string file, float azimuth, float altitude, glm::vec2 angularSize, float time, bool applyTilt, AppContext* context);
     void LoadImageAbsolute(std::string location, float azimuth, float altitude, glm::vec2 angularSize, float time, bool applyTilt, AppContext* context);
     void LoadImage(SDL_Surface* surface, float azimuth, float altitude, glm::vec2 angularSize, float time, bool applyTilt, AppContext* context);
-    void DeleteImage(AppContext* context);
+    void DeleteImage(AppContext* context, int index);
     void Clean(AppContext* context);
 };

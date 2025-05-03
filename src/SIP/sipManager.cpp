@@ -8,11 +8,13 @@ SIPManager::SIPManager()
     lastImage = 0;
     currentImageCount = 0;
     time = 0;
+    lastDeleted = 0;
 }
 
 void SIPManager::Initalize(AppContext* context, int maxImages, float baseTime)
 {
     images = new SIPImage[maxImages];
+    deletedIndexes = new int[maxImages];
     this->baseTime = baseTime;
     this->maxImages = maxImages;
 
@@ -74,9 +76,20 @@ void SIPManager::LoadImage(std::string file, float azimuth, float altitude, glm:
 
     SIPImage image;
     image.CreateFromFile(file, azimuth, altitude, angularSize, deltaTime, context);
-    images[lastImage] = image;
-    lastImage++;
-    currentImageCount++;
+
+    //check if we can use a index out of the deleted
+    if(lastDeleted > 0)
+    {
+        lastDeleted--;
+        images[deletedIndexes[lastDeleted]] = image;
+        currentImageCount++;
+    }
+    else
+    {
+        images[lastImage] = image;
+        lastImage++;
+        currentImageCount++;
+    }
 }
 
 void SIPManager::LoadImageAbsolute(std::string location, float azimuth, float altitude, glm::vec2 angularSize, float time, AppContext* context)
@@ -100,9 +113,20 @@ void SIPManager::LoadImageAbsolute(std::string location, float azimuth, float al
 
     SIPImage image;
     image.CreateFromLocation(location, azimuth, altitude, angularSize, deltaTime, context);
-    images[lastImage] = image;
-    lastImage++;
-    currentImageCount++;
+
+    //check if we can use a index out of the deleted
+    if(lastDeleted > 0)
+    {
+        lastDeleted--;
+        images[deletedIndexes[lastDeleted]] = image;
+        currentImageCount++;
+    }
+    else
+    {
+        images[lastImage] = image;
+        lastImage++;
+        currentImageCount++;
+    }
 }
 
 
@@ -127,9 +151,20 @@ void SIPManager::LoadImage(SDL_Surface* surface, float azimuth, float altitude, 
 
     SIPImage image;
     image.CreateFromSurface(surface, azimuth, altitude, angularSize, deltaTime, context);
-    images[lastImage] = image;
-    lastImage++;
-    currentImageCount++;
+
+    //check if we can use a index out of the deleted
+    if(lastDeleted > 0)
+    {
+        lastDeleted--;
+        images[deletedIndexes[lastDeleted]] = image;
+        currentImageCount++;
+    }
+    else
+    {
+        images[lastImage] = image;
+        lastImage++;
+        currentImageCount++;
+    }
 }
 
 void SIPManager::LoadImage(std::string file, float azimuth, float altitude, glm::vec2 angularSize, float time, bool applyTilt, AppContext* context)
@@ -151,12 +186,22 @@ void SIPManager::LoadImage(std::string file, float azimuth, float altitude, glm:
         deltaTime = time - baseTime;
     }
 
-
     SIPImage image;
     image.CreateFromFile(file, azimuth, altitude, angularSize, deltaTime, applyTilt, context);
-    images[lastImage] = image;
-    lastImage++;
-    currentImageCount++;
+
+    //check if we can use a index out of the deleted
+    if(lastDeleted > 0)
+    {
+        lastDeleted--;
+        images[deletedIndexes[lastDeleted]] = image;
+        currentImageCount++;
+    }
+    else
+    {
+        images[lastImage] = image;
+        lastImage++;
+        currentImageCount++;
+    }
 }
 
 void SIPManager::LoadImageAbsolute(std::string location, float azimuth, float altitude, glm::vec2 angularSize, float time, bool applyTilt, AppContext* context)
@@ -180,9 +225,19 @@ void SIPManager::LoadImageAbsolute(std::string location, float azimuth, float al
 
     SIPImage image;
     image.CreateFromLocation(location, azimuth, altitude, angularSize, deltaTime, applyTilt, context);
-    images[lastImage] = image;
-    lastImage++;
-    currentImageCount++;
+
+    if(lastDeleted > 0)
+    {
+        lastDeleted--;
+        images[deletedIndexes[lastDeleted]] = image;
+        currentImageCount++;
+    }
+    else
+    {
+        images[lastImage] = image;
+        lastImage++;
+        currentImageCount++;
+    }
 }
 
 
@@ -207,20 +262,31 @@ void SIPManager::LoadImage(SDL_Surface* surface, float azimuth, float altitude, 
 
     SIPImage image;
     image.CreateFromSurface(surface, azimuth, altitude, angularSize, deltaTime, applyTilt, context);
-    images[lastImage] = image;
-    lastImage++;
-    currentImageCount++;
+
+    if(lastDeleted > 0)
+    {
+        lastDeleted--;
+        images[deletedIndexes[lastDeleted]] = image;
+        currentImageCount++;
+    }
+    else
+    {
+        images[lastImage] = image;
+        lastImage++;
+        currentImageCount++;
+    }
 }
 
 
-void SIPManager::DeleteImage(AppContext* context)
+void SIPManager::DeleteImage(AppContext* context, int index)
 {
     //check that we are not going to delete a empty image
     if(currentImageCount > 0)
     {
-        images[lastImage].Delete(context);
-        lastImage--;
+        images[index].Delete(context);
         currentImageCount--;
+        deletedIndexes[lastDeleted] = index;
+        lastDeleted++;
     }
 }
 
@@ -233,6 +299,7 @@ void SIPManager::Clean(AppContext* context)
     }
 
     delete[] images;
+    delete[] deletedIndexes;
 }
 
 

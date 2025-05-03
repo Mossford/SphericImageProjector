@@ -118,12 +118,24 @@ void SIPImageMenu(AppContext* context)
 
     if (ImGui::TreeNode("Images"))
     {
-        for (unsigned int i = 0; i < context->sipManager.currentImageCount; i++)
+        for (unsigned int i = 4; i < context->sipManager.maxImages; i++)
         {
-            if (ImGui::TreeNode((void*)(intptr_t)i, "Image %d", i))
+            if(!context->sipManager.images[i].created)
+                continue;
+
+            if (ImGui::TreeNode((void*)(intptr_t)i, "Image %s", context->sipManager.images[i].file.c_str()))
             {
                 ImGui::Image(ImTextureID(&context->sipManager.images[i].image.samplerBinding), {1280 / 2, 720 / 2}, {1,1}, {0,0});
                 ImGui::TreePop();
+            }
+            else
+            {
+                ImGui::SameLine();
+                std::string buttonText = "Delete##" + std::to_string(i);
+                if(ImGui::Button(buttonText.c_str()))
+                {
+                    context->sipManager.DeleteImage(context, i);
+                }
             }
         }
         ImGui::TreePop();
