@@ -277,11 +277,7 @@ void Mesh::ProjectToSphere(glm::mat4 rotationMat, glm::mat4 scaleMat, int subdiv
 
     float degToRad = M_PI / 180.0f;
 
-    //https://en.wikipedia.org/wiki/Spherical_coordinate_system
-    glm::vec3 target;
-    target.x = sin(rotation.x * degToRad) * cos(rotation.y * degToRad);
-    target.y = sin(rotation.y * degToRad);
-    target.z = -cos(rotation.x * degToRad) * cos(rotation.y * degToRad);
+    glm::vec3 target = SphericToVec({rotation.x, rotation.y});
 
     glm::mat4 rot = glm::mat4(1.0f);
     rot = glm::translate(rot, target);

@@ -69,7 +69,7 @@ void SIPManager::LoadImage(std::string file, float azimuth, float altitude, glm:
     else if(time != baseTime && baseTime != -1)
     {
         //check for time passing
-        deltaTime = baseTime - time;
+        deltaTime = time - baseTime;
     }
 
     SIPImage image;
@@ -95,7 +95,7 @@ void SIPManager::LoadImageAbsolute(std::string location, float azimuth, float al
     else if(time != baseTime && baseTime != -1)
     {
         //check for time passing
-        deltaTime = baseTime - time;
+        deltaTime = time - baseTime;
     }
 
     SIPImage image;
@@ -122,7 +122,7 @@ void SIPManager::LoadImage(SDL_Surface* surface, float azimuth, float altitude, 
     else if(time != baseTime && baseTime != -1)
     {
         //check for time passing
-        deltaTime = baseTime - time;
+        deltaTime = time - baseTime;
     }
 
     SIPImage image;
@@ -148,8 +148,9 @@ void SIPManager::LoadImage(std::string file, float azimuth, float altitude, glm:
     else if(time != baseTime && baseTime != -1)
     {
         //check for time passing
-        deltaTime = baseTime - time;
+        deltaTime = time - baseTime;
     }
+
 
     SIPImage image;
     image.CreateFromFile(file, azimuth, altitude, angularSize, deltaTime, applyTilt, context);
@@ -174,7 +175,7 @@ void SIPManager::LoadImageAbsolute(std::string location, float azimuth, float al
     else if(time != baseTime && baseTime != -1)
     {
         //check for time passing
-        deltaTime = baseTime - time;
+        deltaTime = time - baseTime;
     }
 
     SIPImage image;
@@ -201,7 +202,7 @@ void SIPManager::LoadImage(SDL_Surface* surface, float azimuth, float altitude, 
     else if(time != baseTime && baseTime != -1)
     {
         //check for time passing
-        deltaTime = baseTime - time;
+        deltaTime = time - baseTime;
     }
 
     SIPImage image;

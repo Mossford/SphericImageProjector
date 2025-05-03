@@ -131,7 +131,7 @@ int main()
 	context.sipManager.LoadImage(TTF_RenderText_Solid(font, west.data(), west.length(), { 255,255,255 }), 270, 0, glm::vec2(2,2), -1, false, &context);
 	context.sipManager.LoadImage("M51.png", 74.76f, 71.7f, glm::vec2(3.41f, 2.28f), 31730, &context);
 	context.sipManager.LoadImage("M101.jpg", 54.55f, 67.85f, glm::vec2(3.41f, 2.28f), 32934, &context);
-	context.sipManager.LoadImage("uvCheck.jpg", 90, 90, glm::vec2(1.0f, 1.0f), 32934, &context);
+	context.sipManager.LoadImage("uvCheck.jpg", 0, 45, glm::vec2(1.0f, 1.0f), 31730, &context);
 
 	while (!quit)
 	{
@@ -192,7 +192,7 @@ int main()
 
 void Update()
 {
-	ground.rotation.z += context.sipManager.earthRotationSpeed * frameTime * context.sipManager.speed;
+	ground.rotation.y -= context.sipManager.earthRotationSpeed * frameTime * context.sipManager.speed;
 
 	context.sipManager.Update(&context, frameTime);
 
@@ -262,7 +262,7 @@ void Draw()
 		glm::mat4 combineMat = proj * view * ground.modelMatrix;
 		context.defaultPipeline.vertexShader.AddMat4(combineMat);
 		context.defaultPipeline.vertexShader.BindVertexUniformData(cmdbuf, 0);
-		ground.DrawMesh(&context, renderPass, cmdbuf);
+		//ground.DrawMesh(&context, renderPass, cmdbuf);
 
 		context.sipManager.Draw(&context, &camera, renderPass, cmdbuf);
 

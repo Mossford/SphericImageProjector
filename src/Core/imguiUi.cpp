@@ -11,6 +11,7 @@ void MainImguiMenu(AppContext* context)
 {
     static bool showSIPImageMenu = false;
     static bool showSIPImageCreationMenu = false;
+    static bool setEST = false;
     float curTime = SDL_GetTicks();
 
     static ImGuiWindowFlags window_flags = 0;
@@ -41,13 +42,38 @@ void MainImguiMenu(AppContext* context)
     Uint64 utcMinsCur = (Uint64)(floorf((SIPtime + utcSeconds) / 60.0f) + utcMins) % 60;
     Uint64 utcSecondsCur = ((Uint64)(SIPtime + utcSeconds) % 60);
 
-    ImGui::Text("Base Time (UTC): %02lu:%02lu:%02lu", utcHours, utcMins, utcSeconds);
-    if(utcHoursCur >= 24.0f)
+    if(ImGui::RadioButton("TimeZone", setEST))
     {
-        ImGui::Text("Time From Base (UTC): %02ld:%02ld:%02lu:%02lu", utcHoursCur / 24, utcHoursCur % 24, utcMinsCur, utcSecondsCur);
+        setEST = !setEST;
+    }
+
+    if(!setEST)
+    {
+        ImGui::Text("Base Time (UTC): %02lu:%02lu:%02lu", utcHours, utcMins, utcSeconds);
+        if(utcHoursCur >= 24.0f)
+        {
+            ImGui::Text("Time From Base (UTC): %02ld:%02ld:%02lu:%02lu", utcHoursCur / 24, utcHoursCur % 24, utcMinsCur, utcSecondsCur);
+        }
+        else
+            ImGui::Text("Time From Base (UTC): %02ld:%02lu:%02lu", utcHoursCur, utcMinsCur, utcSecondsCur);
     }
     else
-        ImGui::Text("Time From Base (UTC): %02ld:%02lu:%02lu", utcHoursCur, utcMinsCur, utcSecondsCur);
+    {
+        utcHours -= 4;
+        if(utcHours < 0)
+            utcHours += 24;
+        utcHoursCur -= 4;
+        if(utcHoursCur < 0)
+            utcHoursCur += 24;
+
+        ImGui::Text("Base Time (EST): %02lu:%02lu:%02lu", utcHours, utcMins, utcSeconds);
+        if(utcHoursCur >= 24.0f)
+        {
+            ImGui::Text("Time From Base (EST): %02ld:%02ld:%02lu:%02lu", utcHoursCur / 24, utcHoursCur % 24, utcMinsCur, utcSecondsCur);
+        }
+        else
+            ImGui::Text("Time From Base (EST): %02ld:%02lu:%02lu", utcHoursCur, utcMinsCur, utcSecondsCur);
+    }
 
     ImGui::InputFloat("TimeScale", &context->sipManager.speed, 1.0f, 10.0f, "%.1fx");
 
@@ -134,7 +160,7 @@ void SIPImageCreationMenu(AppContext* context, bool* showMenu)
     ImGui::InputFloat("Azimuth", &azimuth, 0.1f, 1.0f, "%.2f");
     azimuth = std::min(std::max(azimuth, 0.0f), 360.0f);
     ImGui::InputFloat("Altitude", &altitude, 0.1f, 1.0f, "%.2f");
-    azimuth = std::min(std::max(altitude, 0.0f), 90.0f);
+    altitude = std::min(std::max(altitude, 0.0f), 90.0f);
 
     ImGui::InputFloat2("Angular Size", glm::value_ptr(angularSize), "%.2f");
     ImGui::InputInt("Time (Seconds)", &timeSeconds, 1.0f, 1.0f);
@@ -183,14 +209,14 @@ void SIPImageCreationMenu(AppContext* context, bool* showMenu)
             if(absolutePath)
             {
                 if(!applyTilt)
-                    context->sipManager.LoadImageAbsolute(std::string(file), azimuth, altitude, angularSize, time, context);
+                    context->sipManager.LoadImageAbsolute(std::string(file), azimuth, altitude, angularSize, time, applyTilt, context);
                 else
                     context->sipManager.LoadImageAbsolute(std::string(file), azimuth, altitude, angularSize, time, applyTilt, context);
             }
             else
             {
                 if(!applyTilt)
-                    context->sipManager.LoadImage(std::string(file), azimuth, altitude, angularSize, time, context);
+                    context->sipManager.LoadImage(std::string(file), azimuth, altitude, angularSize, time, applyTilt, context);
                 else
                     context->sipManager.LoadImage(std::string(file), azimuth, altitude, angularSize, time, applyTilt, context);
             }

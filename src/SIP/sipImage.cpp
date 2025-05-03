@@ -24,15 +24,24 @@ void SIPImage::CreateFromFile(std::string file, float azimuth, float altitude, g
     this->angularSize = angularSize;
     this->time = time;
 
-    image.LoadFromFile(context, file);
-    mesh = Create2DQuadSpherical(glm::vec3(0), glm::vec3(azimuth, altitude, 1.0f), angularSize, 2);
-    mesh.BufferGens(context);
-
     //calculate the starting rotation
     if(applyTilt)
         this->rotation.x = context->sipManager.latitude;
     this->rotation.y -= (context->sipManager.earthRotationSpeed + context->sipManager.earthOrbitSpeed) * time;
 
+    if(applyTilt)
+    {
+        //correct for axis tilt changing the ecliptic
+        glm::vec2 ecliptic = ConvRotAxisToNonAxisEcliptic(rotation, {azimuth, altitude});
+
+        azimuth = ecliptic.x;
+        altitude = ecliptic.y;
+
+    }
+
+    image.LoadFromFile(context, file);
+    mesh = Create2DQuadSpherical(glm::vec3(0), glm::vec3(azimuth, altitude, 1.0f), angularSize, 2);
+    mesh.BufferGens(context);
 
     created = true;
 }
@@ -48,15 +57,23 @@ void SIPImage::CreateFromLocation(std::string location, float azimuth, float alt
     this->angularSize = angularSize;
     this->time = time;
 
-    image.LoadFromLocation(context, file);
-    mesh = Create2DQuadSpherical(glm::vec3(0), glm::vec3(azimuth, altitude, 1.0f), angularSize, 2);
-    mesh.BufferGens(context);
-
     //calculate the starting rotation
     if(applyTilt)
         this->rotation.x = context->sipManager.latitude;
     this->rotation.y -= (context->sipManager.earthRotationSpeed + context->sipManager.earthOrbitSpeed) * time;
 
+    if(applyTilt)
+    {
+        //correct for axis tilt changing the ecliptic
+        glm::vec2 ecliptic = ConvRotAxisToNonAxisEcliptic(rotation, {azimuth, altitude});
+
+        azimuth = ecliptic.x;
+        altitude = ecliptic.y;
+
+    }
+    image.LoadFromLocation(context, file);
+    mesh = Create2DQuadSpherical(glm::vec3(0), glm::vec3(azimuth, altitude, 1.0f), angularSize, 2);
+    mesh.BufferGens(context);
 
     created = true;
 }
@@ -72,14 +89,24 @@ void SIPImage::CreateFromSurface(SDL_Surface* surface, float azimuth, float alti
     this->angularSize = angularSize;
     this->time = time;
 
-    image.CreateFromSurface(context, surface);
-    mesh = Create2DQuadSpherical(glm::vec3(0), glm::vec3(azimuth, altitude, 1.0f), angularSize, 2);
-    mesh.BufferGens(context);
-
     //calculate the starting rotation
     if(applyTilt)
         this->rotation.x = context->sipManager.latitude;
     this->rotation.y -= (context->sipManager.earthRotationSpeed + context->sipManager.earthOrbitSpeed) * time;
+
+    if(applyTilt)
+    {
+        //correct for axis tilt changing the ecliptic
+        glm::vec2 ecliptic = ConvRotAxisToNonAxisEcliptic(rotation, {azimuth, altitude});
+
+        azimuth = ecliptic.x;
+        altitude = ecliptic.y;
+
+    }
+
+    image.CreateFromSurface(context, surface);
+    mesh = Create2DQuadSpherical(glm::vec3(0), glm::vec3(azimuth, altitude, 1.0f), angularSize, 2);
+    mesh.BufferGens(context);
 
 
     created = true;
@@ -87,8 +114,9 @@ void SIPImage::CreateFromSurface(SDL_Surface* surface, float azimuth, float alti
 
 void SIPImage::CreateFromFile(std::string file, float azimuth, float altitude, glm::vec2 angularSize, float time, bool applyTilt, AppContext* context)
 {
+    float degToRad = M_PI / 180.0f;
     //for some reason this is multipled by pi
-    angularSize *=  M_PI / 180.0f;
+    angularSize *=  degToRad;
 
     this->file = file;
     this->azimuth = azimuth;
@@ -97,15 +125,24 @@ void SIPImage::CreateFromFile(std::string file, float azimuth, float altitude, g
     this->time = time;
     this->applyTilt = applyTilt;
 
-    image.LoadFromFile(context, file);
-    mesh = Create2DQuadSpherical(glm::vec3(0), glm::vec3(azimuth, altitude, 1.0f), angularSize, 2);
-    mesh.BufferGens(context);
-
     //calculate the starting rotation
     if(applyTilt)
         this->rotation.x = context->sipManager.latitude;
     this->rotation.y -= (context->sipManager.earthRotationSpeed + context->sipManager.earthOrbitSpeed) * time;
 
+    if(applyTilt)
+    {
+        //correct for axis tilt changing the ecliptic
+        glm::vec2 ecliptic = ConvRotAxisToNonAxisEcliptic(rotation, {azimuth, altitude});
+
+        azimuth = ecliptic.x;
+        altitude = ecliptic.y;
+
+    }
+
+    image.LoadFromLocation(context, file);
+    mesh = Create2DQuadSpherical(glm::vec3(0), glm::vec3(azimuth, altitude, 1.0f), angularSize, 2);
+    mesh.BufferGens(context);
 
     created = true;
 }
@@ -122,15 +159,24 @@ void SIPImage::CreateFromLocation(std::string location, float azimuth, float alt
     this->time = time;
     this->applyTilt = applyTilt;
 
-    image.LoadFromLocation(context, file);
-    mesh = Create2DQuadSpherical(glm::vec3(0), glm::vec3(azimuth, altitude, 1.0f), angularSize, 2);
-    mesh.BufferGens(context);
-
     //calculate the starting rotation
     if(applyTilt)
         this->rotation.x = context->sipManager.latitude;
     this->rotation.y -= (context->sipManager.earthRotationSpeed + context->sipManager.earthOrbitSpeed) * time;
 
+    if(applyTilt)
+    {
+        //correct for axis tilt changing the ecliptic
+        glm::vec2 ecliptic = ConvRotAxisToNonAxisEcliptic(rotation, {azimuth, altitude});
+
+        azimuth = ecliptic.x;
+        altitude = ecliptic.y;
+
+    }
+
+    image.LoadFromLocation(context, file);
+    mesh = Create2DQuadSpherical(glm::vec3(0), glm::vec3(azimuth, altitude, 1.0f), angularSize, 2);
+    mesh.BufferGens(context);
 
     created = true;
 }
@@ -147,15 +193,24 @@ void SIPImage::CreateFromSurface(SDL_Surface* surface, float azimuth, float alti
     this->time = time;
     this->applyTilt = applyTilt;
 
-    image.CreateFromSurface(context, surface);
-    mesh = Create2DQuadSpherical(glm::vec3(0), glm::vec3(azimuth, altitude, 1.0f), angularSize, 2);
-    mesh.BufferGens(context);
-
     //calculate the starting rotation
     if(applyTilt)
         this->rotation.x = context->sipManager.latitude;
     this->rotation.y -= (context->sipManager.earthRotationSpeed + context->sipManager.earthOrbitSpeed) * time;
 
+    if(applyTilt)
+    {
+        //correct for axis tilt changing the ecliptic
+        glm::vec2 ecliptic = ConvRotAxisToNonAxisEcliptic(rotation, {azimuth, altitude});
+
+        azimuth = ecliptic.x;
+        altitude = ecliptic.y;
+
+    }
+
+    image.CreateFromSurface(context, surface);
+    mesh = Create2DQuadSpherical(glm::vec3(0), glm::vec3(azimuth, altitude, 1.0f), angularSize, 2);
+    mesh.BufferGens(context);
 
     created = true;
 }
@@ -194,7 +249,7 @@ void SIPImage::ApplyRotation(float earthRotation, float earthOrbit, float latitu
 {
     if(applyTilt)
     {
-        this->rotation.x = latitude;
+        //this->rotation.x = latitu;
     }
     this->rotation.y -= (earthOrbit + earthRotation) * deltaTime;
 }
