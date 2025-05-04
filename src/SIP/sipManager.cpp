@@ -76,6 +76,8 @@ void SIPManager::LoadImage(std::string file, float azimuth, float altitude, glm:
 
     SIPImage image;
     image.CreateFromFile(file, azimuth, altitude, angularSize, deltaTime, context);
+    //reset the time to what it should be
+    image.time = time;
 
     //check if we can use a index out of the deleted
     if(lastDeleted > 0)
@@ -113,6 +115,8 @@ void SIPManager::LoadImageAbsolute(std::string location, float azimuth, float al
 
     SIPImage image;
     image.CreateFromLocation(location, azimuth, altitude, angularSize, deltaTime, context);
+    //reset the time to what it should be
+    image.time = time;
 
     //check if we can use a index out of the deleted
     if(lastDeleted > 0)
@@ -151,6 +155,8 @@ void SIPManager::LoadImage(SDL_Surface* surface, float azimuth, float altitude, 
 
     SIPImage image;
     image.CreateFromSurface(surface, azimuth, altitude, angularSize, deltaTime, context);
+    //reset the time to what it should be
+    image.time = time;
 
     //check if we can use a index out of the deleted
     if(lastDeleted > 0)
@@ -188,6 +194,8 @@ void SIPManager::LoadImage(std::string file, float azimuth, float altitude, glm:
 
     SIPImage image;
     image.CreateFromFile(file, azimuth, altitude, angularSize, deltaTime, applyTilt, context);
+    //reset the time to what it should be
+    image.time = time;
 
     //check if we can use a index out of the deleted
     if(lastDeleted > 0)
@@ -225,6 +233,8 @@ void SIPManager::LoadImageAbsolute(std::string location, float azimuth, float al
 
     SIPImage image;
     image.CreateFromLocation(location, azimuth, altitude, angularSize, deltaTime, applyTilt, context);
+    //reset the time to what it should be
+    image.time = time;
 
     if(lastDeleted > 0)
     {
@@ -262,6 +272,8 @@ void SIPManager::LoadImage(SDL_Surface* surface, float azimuth, float altitude, 
 
     SIPImage image;
     image.CreateFromSurface(surface, azimuth, altitude, angularSize, deltaTime, applyTilt, context);
+    //reset the time to what it should be
+    image.time = time;
 
     if(lastDeleted > 0)
     {

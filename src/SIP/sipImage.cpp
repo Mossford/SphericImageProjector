@@ -137,7 +137,6 @@ void SIPImage::CreateFromFile(std::string file, float azimuth, float altitude, g
 
         azimuth = ecliptic.x;
         altitude = ecliptic.y;
-
     }
 
     image.LoadFromLocation(context, file);
@@ -247,10 +246,6 @@ void SIPImage::Delete(AppContext* context)
 
 void SIPImage::ApplyRotation(float earthRotation, float earthOrbit, float latitude, float deltaTime, float time)
 {
-    if(applyTilt)
-    {
-        //this->rotation.x = latitu;
-    }
     this->rotation.y -= (earthOrbit + earthRotation) * deltaTime;
 }
 

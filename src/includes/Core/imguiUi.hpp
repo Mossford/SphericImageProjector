@@ -9,3 +9,4 @@ struct AppContext;
 
 void MainImguiMenu(AppContext* context);
 void DrawImgui(SDL_GPUCommandBuffer* cmdBuf, SDL_GPURenderPass* renderPass);
+void SetImGuiStyle();

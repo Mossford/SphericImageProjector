@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.16)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/$<CONFIGURATION>")
 
-# prevent installing to system directories. 
+# prevent installing to system directories.
 set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}" CACHE INTERNAL "")
 
 set(CMAKE_BUILD_TYPE "Release")
@@ -13,7 +13,7 @@ set(CMAKE_BUILD_TYPE "Release")
 # Declare the project
 project(SphericImageProjector)
 
-if ((APPLE AND NOT CMAKE_SYSTEM_NAME MATCHES "Darwin") OR EMSCRIPTEN)
+if (EMSCRIPTEN)
     set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "")    # Disable shared builds on platforms where it does not make sense to use them
     set(SDL_SHARED OFF)
     set(BUILD_SHARED_LIBS OFF)
@@ -34,8 +34,8 @@ set(EXECUTABLE_NAME ${PROJECT_NAME})
 add_executable(${EXECUTABLE_NAME})
 
 # Add your sources to the target
-target_sources(${EXECUTABLE_NAME} 
-PRIVATE 
+target_sources(${EXECUTABLE_NAME}
+PRIVATE
     ${CMAKE_SOURCE_DIR}/src/Core/main.cpp
     ${CMAKE_SOURCE_DIR}/src/Core/mesh.cpp
     ${CMAKE_SOURCE_DIR}/src/Core/shader.cpp
@@ -52,7 +52,7 @@ PRIVATE
 # Set C++ version
 target_compile_features(${EXECUTABLE_NAME} PUBLIC cxx_std_17)
 
-# on Web targets, we need CMake to generate a HTML webpage. 
+# on Web targets, we need CMake to generate a HTML webpage.
 if(EMSCRIPTEN)
 	set(CMAKE_EXECUTABLE_SUFFIX ".html" CACHE INTERNAL "")
 endif()
@@ -71,7 +71,7 @@ add_subdirectory(SDL EXCLUDE_FROM_ALL)
 
 # If you don't want SDL_ttf, then remove this section.
 set(SDLTTF_VENDORED ON) # tell SDL_ttf to build its own dependencies
-add_subdirectory(SDL_ttf EXCLUDE_FROM_ALL)	
+add_subdirectory(SDL_ttf EXCLUDE_FROM_ALL)
 
 # SDL_image (used for loading various image formats)
 set(SDLIMAGE_VENDORED ON)
@@ -81,7 +81,7 @@ set(SDLIMAGE_JPEG OFF)
 set(SDLIMAGE_WEBP OFF)
 add_subdirectory(SDL_image EXCLUDE_FROM_ALL)
 
-add_library(Libs STATIC 
+add_library(Libs STATIC
     ${CMAKE_SOURCE_DIR}/imgui/imgui.cpp
     ${CMAKE_SOURCE_DIR}/imgui/imgui_demo.cpp
     ${CMAKE_SOURCE_DIR}/imgui/imgui_draw.cpp
@@ -98,11 +98,11 @@ target_include_directories(Libs PUBLIC
     $<TARGET_PROPERTY:SDL3::SDL3,INTERFACE_INCLUDE_DIRECTORIES>
 )
 
-# Link SDL to our executable. This also makes its include directory available to us. 
-target_link_libraries(${EXECUTABLE_NAME} PUBLIC 
+# Link SDL to our executable. This also makes its include directory available to us.
+target_link_libraries(${EXECUTABLE_NAME} PUBLIC
     glm::glm
-    glslang::glslang 
-    glslang::SPIRV 
+    glslang::glslang
+    glslang::SPIRV
     glslang::glslang-default-resource-limits
     Libs
     SDL3_ttf::SDL3_ttf      # remove if you are not using SDL_ttf
@@ -110,14 +110,22 @@ target_link_libraries(${EXECUTABLE_NAME} PUBLIC
     SDL3::SDL3              # If using satelite libraries, SDL must be the last item in the list.
 )
 
+target_compile_definitions(${EXECUTABLE_NAME} PUBLIC SDL_MAIN_USE_CALLBACKS)
+
 # Dealing with assets
 # We have some non-code resources that our application needs in order to work. How we deal with those differs per platform.
 if(EMSCRIPTEN)
     # on the web, we have to put the files inside of the webassembly
     # somewhat unintuitively, this is done via a linker argument.
-    target_link_libraries(${EXECUTABLE_NAME} PRIVATE 
-        "--preload-file \"${CMAKE_CURRENT_LIST_DIR}/src/Inter-VariableFont.ttf@/\""
-        "--preload-file \"${CMAKE_CURRENT_LIST_DIR}/src/gs_tiger.svg@/\""
+    target_link_libraries(${EXECUTABLE_NAME} PRIVATE
+        "--preload-file \"${CMAKE_CURRENT_LIST_DIR}/src/Res/Inter-VariableFont.ttf@/\""
+        "--preload-file \"${CMAKE_CURRENT_LIST_DIR}/src/Res/M51.png@/\""
+        "--preload-file \"${CMAKE_CURRENT_LIST_DIR}/src/Res/default.frag@/\""
+        "--preload-file \"${CMAKE_CURRENT_LIST_DIR}/src/Res/default.vert@/\""
+        "--preload-file \"${CMAKE_CURRENT_LIST_DIR}/src/Res/uvCheck.jpg@/\""
+        "--preload-file \"${CMAKE_CURRENT_LIST_DIR}/src/Res/defaultSIPImage.frag@/\""
+        "--preload-file \"${CMAKE_CURRENT_LIST_DIR}/src/Res/defaultSIPImage.vert@/\""
+        "--preload-file \"${CMAKE_CURRENT_LIST_DIR}/src/Res/M101.jpg@/\""
     )
 else()
 
@@ -144,29 +152,9 @@ endif()
 # set some extra configs for each platform
 set(RESOURCE_FILES "src/logo.png")
 
-set_target_properties(${EXECUTABLE_NAME} PROPERTIES 
+set_target_properties(${EXECUTABLE_NAME} PROPERTIES
     RESOURCE "${RESOURCE_FILES}"
 )
 
 # on Visual Studio, set our app as the default project
 set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT "${EXECUTABLE_NAME}")
-
-# On macOS Platforms, ensure that the bundle is valid for distribution by calling fixup_bundle.
-# note that fixup_bundle does not work on iOS, so you will want to use static libraries 
-# or manually copy dylibs and set rpaths
-if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
-    # tell Install about the target, otherwise fixup won't know about the transitive dependencies
-    install(TARGETS ${EXECUTABLE_NAME}
-    	BUNDLE DESTINATION ./install COMPONENT Runtime
-   	    RUNTIME DESTINATION ./install/bin COMPONENT Runtime
-    )
-	
-    set(DEP_DIR "${CMAKE_BINARY_DIR}")  # where to look for dependencies when fixing up
-    INSTALL(CODE 
-        "include(BundleUtilities)
-        fixup_bundle(\"$<TARGET_BUNDLE_DIR:${EXECUTABLE_NAME}>\" \"\" \"${DEP_DIR}\")
-        " 
-    )
-    set(CPACK_GENERATOR "DragNDrop")
-    include(CPack)
-endif()

@@ -13,6 +13,8 @@ struct AppContext
 {
     SDL_Window* window;
     SDL_GPUDevice* gpuDevice;
+    const char* api;
+    const char* gpuName;
     SDL_AppResult app_quit = SDL_APP_CONTINUE;
     const char* basePath;
     SDL_GPUViewport viewPort;

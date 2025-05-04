@@ -172,7 +172,7 @@ void Mesh::CreateSmoothNormals()
         glm::vec3 normal = glm::vec3(1);
         for (unsigned int i = 0; i < indices.size(); i += 3)
         {
-            uint a, b, c;
+            unsigned int a, b, c;
             a = indices[i];
             b = indices[i + 1];
             c = indices[i + 2];
