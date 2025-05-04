@@ -315,4 +315,32 @@ void SIPManager::Clean(AppContext* context)
 }
 
 
+float SIPManager::GetDayNightCycle()
+{
+    int component = ((int)(time / 3600.0f) % 24) / 6;
+    float componentTime = fmod(time / 3600.0f, 6.0f);
 
+    //the time is divided into 4 components
+    if(component == 0)
+    {
+        //night
+        return 0.0f;
+    }
+    else if(component == 1)
+    {
+        //night to day
+        return componentTime / 6.0f;
+    }
+    else if(component == 2)
+    {
+        //day
+        return 1.0f;
+    }
+    else if(component == 3)
+    {
+        //day to night
+        return -componentTime / 6.0f + 1;
+    }
+
+    return 0.0f;
+}

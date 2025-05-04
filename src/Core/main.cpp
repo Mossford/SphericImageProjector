@@ -112,7 +112,7 @@ SDL_AppResult SDL_AppInit(void** app, int argc, char* argv[])
 
 	SetImGuiStyle();
 
-	context->defaultPipeline.Initalize(ShaderSettings("default.vert", 0, 1, 0, 0), ShaderSettings("default.frag", 1, 0, 0, 0));
+	context->defaultPipeline.Initalize(ShaderSettings("default.vert", 0, 1, 0, 0), ShaderSettings("default.frag", 1, 1, 0, 0));
 	context->defaultPipeline.CreatePipeline(context);
 
 	context->backBuffer.CreateTexture(context, SDL_GPU_TEXTURETYPE_2D, windowStartWidth, windowStartHeight, SDL_GPU_TEXTUREFORMAT_D16_UNORM, SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET);
@@ -254,7 +254,7 @@ void Draw(AppContext* context)
 	{
 		SDL_GPUColorTargetInfo colorTargetInfo = {};
 		colorTargetInfo.texture = swapchainTexture;
-		colorTargetInfo.clear_color = (SDL_FColor){ 0.0f, 0.02f, 0.05f, 1.0f };
+		colorTargetInfo.clear_color = (SDL_FColor){ abs(0.0f - context->sipManager.GetDayNightCycle()), abs(0.02f - context->sipManager.GetDayNightCycle()), abs(0.05f - context->sipManager.GetDayNightCycle()), 1.0f };
 		colorTargetInfo.load_op = SDL_GPU_LOADOP_CLEAR;
 		colorTargetInfo.store_op = SDL_GPU_STOREOP_STORE;
 
@@ -279,6 +279,8 @@ void Draw(AppContext* context)
 		glm::mat4 combineMat = proj * view * ground.modelMatrix;
 		context->defaultPipeline.vertexShader.AddMat4(combineMat);
 		context->defaultPipeline.vertexShader.BindVertexUniformData(cmdbuf, 0);
+		context->defaultPipeline.fragmentShader.AddFloat(context->sipManager.GetDayNightCycle());
+		context->defaultPipeline.fragmentShader.BindFragmentUniformData(cmdbuf, 0);
 		ground.DrawMesh(context, renderPass, cmdbuf);
 
 		context->sipManager.Draw(context, &camera, renderPass, cmdbuf);

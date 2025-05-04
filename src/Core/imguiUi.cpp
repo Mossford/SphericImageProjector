@@ -8,7 +8,6 @@ void SetImGuiStyle();
 static void HelpMarker(const char* desc);
 
 static std::string errorMessage;
-static bool setEST = false;
 
 void MainImguiMenu(AppContext* context)
 {
@@ -46,10 +45,10 @@ void MainImguiMenu(AppContext* context)
     Uint64 utcMinsCur = (Uint64)(floorf((SIPtime + utcSeconds) / 60.0f) + utcMins) % 60;
     Uint64 utcSecondsCur = ((Uint64)(SIPtime + utcSeconds) % 60);
 
-    ImGui::Checkbox("TimeZone", &setEST);
+    ImGui::Checkbox("TimeZone", &context->sipManager.enableTimeZone);
     HelpMarker("The current timzeone option (UTC/EST)");
 
-    if(!setEST)
+    if(!context->sipManager.enableTimeZone)
     {
         ImGui::Text("Base Time (UTC): %02lu:%02lu:%02lu", utcHours, utcMins, utcSeconds);
         if(utcHoursCur >= 24.0f)
@@ -140,7 +139,7 @@ void SIPImageMenu(AppContext* context)
                 int64_t utcHours = floor(totalTime / 10000);
                 int64_t utcMins = (int64_t)floor(totalTime / 100) % 100;
                 int64_t utcSeconds = (int64_t)totalTime % 100;
-                if(!setEST)
+                if(!context->sipManager.enableTimeZone)
                     ImGui::BulletText("Time (UTC): %02lu:%02lu:%02lu", utcHours, utcMins, utcSeconds);
                 else
                 {
@@ -202,7 +201,7 @@ void SIPImageCreationMenu(AppContext* context, bool* showMenu)
     altitude = std::min(std::max(altitude, -90.0f), 90.0f);
 
     ImGui::InputFloat2("Angular Size", glm::value_ptr(angularSize), "%.2f°");
-    if(setEST)
+    if(context->sipManager.enableTimeZone)
         ImGui::Text("Time input expects in EST");
     ImGui::InputInt("Time (s)", &timeSeconds, 1.0f, 1.0f);
     HelpMarker("The seconds of when the image was taken");
@@ -249,7 +248,7 @@ void SIPImageCreationMenu(AppContext* context, bool* showMenu)
         if(allowCreation)
         {
             //do conversion if we are in est to utc
-            if(setEST)
+            if(context->sipManager.enableTimeZone)
             {
                 timeHours += 4;
                 if(timeHours >= 24)
@@ -274,6 +273,20 @@ void SIPImageCreationMenu(AppContext* context, bool* showMenu)
             }
 
             *showMenu = false;
+        }
+    }
+
+    if(ImGui::CollapsingHeader("Presets"))
+    {
+        if(ImGui::Button("Load 600mm Preset"))
+        {
+            angularSize.x = 3.41f;
+            angularSize.y = 2.28f;
+        }
+        if(ImGui::Button("Load 180mm Preset"))
+        {
+            angularSize.x = 11.38f;
+            angularSize.y = 7.58f;
         }
     }
 

@@ -7,6 +7,11 @@ layout (location = 2) in vec2 aUV;
 
 layout(set = 2, binding = 0) uniform sampler2D textureSamp;
 
+layout(set = 3, binding = 0) uniform UniformBufferObject
+{
+    float timeCycle;
+} ubo;
+
 #define PI 3.14159265358979323846
 
 float DegToUvX(float deg)
@@ -43,7 +48,7 @@ void main()
     vec3 color = vec3(1.0);
     color = texture(textureSamp, uv).rgb;
 
-    color *= 0.1;
+    color *= max(ubo.timeCycle, 0.1);
     
     out_color = vec4(color, 1.0);
 }

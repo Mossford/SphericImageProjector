@@ -20,6 +20,7 @@ public:
     //the time adjusted with the speed in seconds
     double time;
     float speed;
+    bool enableTimeZone;
 
     //the last added image index
     int lastImage;
@@ -49,4 +50,6 @@ public:
     void LoadImage(SDL_Surface* surface, float azimuth, float altitude, glm::vec2 angularSize, float time, bool applyTilt, AppContext* context);
     void DeleteImage(AppContext* context, int index);
     void Clean(AppContext* context);
+
+    float GetDayNightCycle();
 };
