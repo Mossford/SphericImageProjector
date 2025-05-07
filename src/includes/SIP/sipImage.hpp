@@ -37,4 +37,6 @@ public:
 
     //applys the earths rotation
     void ApplyRotation(float earthRotation, float earthOrbit, float latitude, float deltaTime, float time);
+    glm::vec3 GetPosition();
+    glm::vec3 ProjectPosToImage(AppContext* context, glm::vec3 pos);
 };

@@ -44,9 +44,12 @@ PRIVATE
     ${CMAKE_SOURCE_DIR}/src/Core/pipeline.cpp
     ${CMAKE_SOURCE_DIR}/src/Core/texture.cpp
     ${CMAKE_SOURCE_DIR}/src/Core/imguiUi.cpp
+    ${CMAKE_SOURCE_DIR}/src/Core/line.cpp
+    ${CMAKE_SOURCE_DIR}/src/Core/lineRenderer.cpp
 
     ${CMAKE_SOURCE_DIR}/src/SIP/sipManager.cpp
     ${CMAKE_SOURCE_DIR}/src/SIP/sipImage.cpp
+    ${CMAKE_SOURCE_DIR}/src/SIP/sipCamera.cpp
 )
 
 # Set C++ version
@@ -120,12 +123,15 @@ if(EMSCRIPTEN)
     target_link_libraries(${EXECUTABLE_NAME} PRIVATE
         "--preload-file \"${CMAKE_CURRENT_LIST_DIR}/src/Res/Inter-VariableFont.ttf@/\""
         "--preload-file \"${CMAKE_CURRENT_LIST_DIR}/src/Res/M51.png@/\""
+        "--preload-file \"${CMAKE_CURRENT_LIST_DIR}/src/Res/uvCheck.jpg@/\""
+        "--preload-file \"${CMAKE_CURRENT_LIST_DIR}/src/Res/M101.jpg@/\""
+
         "--preload-file \"${CMAKE_CURRENT_LIST_DIR}/src/Res/default.frag@/\""
         "--preload-file \"${CMAKE_CURRENT_LIST_DIR}/src/Res/default.vert@/\""
-        "--preload-file \"${CMAKE_CURRENT_LIST_DIR}/src/Res/uvCheck.jpg@/\""
-        "--preload-file \"${CMAKE_CURRENT_LIST_DIR}/src/Res/defaultSIPImage.frag@/\""
-        "--preload-file \"${CMAKE_CURRENT_LIST_DIR}/src/Res/defaultSIPImage.vert@/\""
-        "--preload-file \"${CMAKE_CURRENT_LIST_DIR}/src/Res/M101.jpg@/\""
+        "--preload-file \"${CMAKE_CURRENT_LIST_DIR}/src/Res/SIPImage.frag@/\""
+        "--preload-file \"${CMAKE_CURRENT_LIST_DIR}/src/Res/SIPImage.vert@/\""
+        "--preload-file \"${CMAKE_CURRENT_LIST_DIR}/src/Res/line.frag@/\""
+        "--preload-file \"${CMAKE_CURRENT_LIST_DIR}/src/Res/line.vert@/\""
     )
 else()
 
@@ -139,13 +145,18 @@ else()
     endmacro()
 
     copy_helper("Inter-VariableFont.ttf")
+    copy_helper("M101.jpg")
     copy_helper("M51.png")
+    copy_helper("uvCheck.jpg")
+
     copy_helper("default.frag")
     copy_helper("default.vert")
-    copy_helper("uvCheck.jpg")
-    copy_helper("defaultSIPImage.frag")
-    copy_helper("defaultSIPImage.vert")
-    copy_helper("M101.jpg")
+    copy_helper("SIPImage.frag")
+    copy_helper("SIPImage.vert")
+    copy_helper("line.frag")
+    copy_helper("line.vert")
+    copy_helper("SIPCamera.frag")
+    copy_helper("SIPCamera.vert")
 
 endif()
 

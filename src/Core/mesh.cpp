@@ -300,8 +300,10 @@ void Mesh::ProjectToSphere(glm::mat4 rotationMat, glm::mat4 scaleMat, int subdiv
     for (int i = 0; i < mesh.vertexes.size(); ++i)
     {
         mesh.vertexes[i].position = glm::normalize(mesh.vertexes[i].position) * radius;
+        position += mesh.vertexes[i].position;
     }
 
+    position /= mesh.vertexes.size();
     vertexes = mesh.vertexes;
 }
 

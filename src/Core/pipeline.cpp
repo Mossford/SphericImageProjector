@@ -13,7 +13,7 @@ void Pipeline::Initalize(ShaderSettings vertSettings, ShaderSettings fragSetting
     this->fragSettings = fragSettings;
 }
 
-void Pipeline::CreatePipeline(AppContext* context)
+void Pipeline::CreatePipeline(AppContext* context, SDL_GPUVertexAttribute* vertexAttrib, Uint32 pitch, int vertexAttribCount)
 {
     // Create the shaders
 	glslang_initialize_process();
@@ -27,38 +27,29 @@ void Pipeline::CreatePipeline(AppContext* context)
 	SDL_GPUVertexBufferDescription vertexBufferDescriptions[1];
 	vertexBufferDescriptions[0] = {};
 	vertexBufferDescriptions[0].slot = 0;
-	vertexBufferDescriptions[0].pitch = sizeof(Vertex);
+	vertexBufferDescriptions[0].pitch = pitch;
 	vertexBufferDescriptions[0].input_rate = SDL_GPU_VERTEXINPUTRATE_VERTEX;
 	vertexBufferDescriptions[0].instance_step_rate = 0;
-
-	SDL_GPUVertexAttribute vertexAttributes[3];
-	vertexAttributes[0] = {};
-	vertexAttributes[0].location = 0;
-	vertexAttributes[0].buffer_slot = 0;
-	vertexAttributes[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3;
-	vertexAttributes[0].offset = 0;
-
-	vertexAttributes[1] = {};
-	vertexAttributes[1].location = 1;
-	vertexAttributes[1].buffer_slot = 0;
-	vertexAttributes[1].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3;
-	vertexAttributes[1].offset = offsetof(Vertex, normal);
-
-	vertexAttributes[2] = {};
-	vertexAttributes[2].location = 2;
-	vertexAttributes[2].buffer_slot = 0;
-	vertexAttributes[2].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;
-	vertexAttributes[2].offset = offsetof(Vertex, uv);
 
 	SDL_GPUVertexInputState vertexInputState = {};
 	vertexInputState.vertex_buffer_descriptions = vertexBufferDescriptions;
 	vertexInputState.num_vertex_buffers = 1;
-	vertexInputState.vertex_attributes = vertexAttributes;
-	vertexInputState.num_vertex_attributes = 3;
+	vertexInputState.vertex_attributes = vertexAttrib;
+	vertexInputState.num_vertex_attributes = vertexAttribCount;
+
+	SDL_GPUColorTargetBlendState colorTargetBlendState = {};
+	colorTargetBlendState.enable_blend = true;
+	colorTargetBlendState.src_color_blendfactor = SDL_GPU_BLENDFACTOR_ONE;
+	colorTargetBlendState.dst_color_blendfactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA;
+	colorTargetBlendState.color_blend_op = SDL_GPU_BLENDOP_ADD;
+	colorTargetBlendState.src_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ONE;
+	colorTargetBlendState.dst_alpha_blendfactor = SDL_GPU_BLENDFACTOR_ONE_MINUS_SRC_ALPHA;
+	colorTargetBlendState.alpha_blend_op = SDL_GPU_BLENDOP_ADD;
 
 	SDL_GPUColorTargetDescription colorTargetDescriptions[1];
 	colorTargetDescriptions[0] = {};
 	colorTargetDescriptions[0].format = SDL_GetGPUSwapchainTextureFormat(context->gpuDevice, context->window);
+	colorTargetDescriptions[0].blend_state = colorTargetBlendState;
 
 	SDL_GPUGraphicsPipelineTargetInfo targetInfo = {};
 	targetInfo.color_target_descriptions = colorTargetDescriptions;
@@ -100,6 +91,9 @@ void Pipeline::CreatePipeline(AppContext* context)
 	SDL_ReleaseGPUShader(context->gpuDevice, fragmentShader.shader);
 
     this->pipelineCreateInfo = pipelineCreateInfo;
+
+	//delete the vertex attributes
+	delete[] vertexAttrib;
 }
 
 void Pipeline::Bind(SDL_GPURenderPass* renderPass)
@@ -111,4 +105,47 @@ void Pipeline::Delete(AppContext* context)
 {
 	if(pipeline != NULL)
 		SDL_ReleaseGPUGraphicsPipeline(context->gpuDevice, pipeline);
+}
+
+
+SDL_GPUVertexAttribute* CreateDefaultVertAttributes()
+{
+	SDL_GPUVertexAttribute* vertexAttributes = new SDL_GPUVertexAttribute[3];
+	vertexAttributes[0] = {};
+	vertexAttributes[0].location = 0;
+	vertexAttributes[0].buffer_slot = 0;
+	vertexAttributes[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3;
+	vertexAttributes[0].offset = 0;
+
+	vertexAttributes[1] = {};
+	vertexAttributes[1].location = 1;
+	vertexAttributes[1].buffer_slot = 0;
+	vertexAttributes[1].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3;
+	vertexAttributes[1].offset = offsetof(Vertex, normal);
+
+	vertexAttributes[2] = {};
+	vertexAttributes[2].location = 2;
+	vertexAttributes[2].buffer_slot = 0;
+	vertexAttributes[2].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT2;
+	vertexAttributes[2].offset = offsetof(Vertex, uv);
+
+	return vertexAttributes;
+}
+
+SDL_GPUVertexAttribute* CreateDefaultLineAttributes()
+{
+	SDL_GPUVertexAttribute* vertexAttributes = new SDL_GPUVertexAttribute[2];
+	vertexAttributes[0] = {};
+	vertexAttributes[0].location = 0;
+	vertexAttributes[0].buffer_slot = 0;
+	vertexAttributes[0].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3;
+	vertexAttributes[0].offset = 0;
+
+	vertexAttributes[1] = {};
+	vertexAttributes[1].location = 1;
+	vertexAttributes[1].buffer_slot = 0;
+	vertexAttributes[1].format = SDL_GPU_VERTEXELEMENTFORMAT_FLOAT3;
+	vertexAttributes[1].offset = sizeof(glm::vec3);
+
+	return vertexAttributes;
 }

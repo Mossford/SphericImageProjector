@@ -18,11 +18,13 @@ void SIPManager::Initalize(AppContext* context, int maxImages, float baseTime)
     this->baseTime = baseTime;
     this->maxImages = maxImages;
 
-    pipeline.Initalize(ShaderSettings("defaultSIPImage.vert", 0, 1, 0, 0), ShaderSettings("defaultSIPImage.frag", 1, 0, 0, 0));
-    pipeline.CreatePipeline(context);
+    pipeline.Initalize(ShaderSettings("SIPImage.vert", 0, 1, 0, 0), ShaderSettings("SIPImage.frag", 1, 0, 0, 0));
+    pipeline.CreatePipeline(context, CreateDefaultVertAttributes(), sizeof(Vertex), 3);
 
     lastImage = 0;
     currentImageCount = 0;
+
+    sipCamera.Initalize(context, 5);
 }
 
 void SIPManager::Update(AppContext* context, float deltaTime)
@@ -309,6 +311,9 @@ void SIPManager::Clean(AppContext* context)
         if(images[i].created)
             images[i].Delete(context);
     }
+
+    pipeline.Delete(context);
+    sipCamera.Clean(context);
 
     delete[] images;
     delete[] deletedIndexes;

@@ -30,3 +30,7 @@ public:
     void BindSampler(SDL_GPURenderPass* renderPass, int slot);
     void Delete(AppContext* context);
 };
+
+SDL_GPUSamplerCreateInfo CreateDefaultPixelSampler();
+void BindTextures(SDL_GPURenderPass* renderPass, int slot, Texture** textures, int count);
+void CopyTexture(AppContext* context, Texture* src, Texture* dest);

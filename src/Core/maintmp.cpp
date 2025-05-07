@@ -20,15 +20,19 @@
 #include "imguiUi.hpp"
 #include "sipManager.hpp"
 
-void Update(AppContext* context);
-void Draw(AppContext* context);
+void Update();
+void Draw();
+void Init();
+void Quit();
+bool quit;
 
-SDL_AppResult SDL_FailCustom()
+int SDL_FailCustom()
 {
     SDL_LogError(SDL_LOG_CATEGORY_CUSTOM, "Error %s", SDL_GetError());
-    return SDL_APP_FAILURE;
+    return -1;
 }
 
+AppContext* context;
 Mesh ground;
 Camera camera;
 Texture groundTexture;
@@ -40,7 +44,7 @@ float frameTime;
 float pastTime;
 bool lockMouse = false;
 
-SDL_AppResult SDL_AppInit(void** app, int argc, char* argv[])
+int main()
 {
 	if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD))
 	{
@@ -53,9 +57,7 @@ SDL_AppResult SDL_AppInit(void** app, int argc, char* argv[])
 		return SDL_FailCustom();
 	}
 
-	//get a refrence so I can set the context from here
-	*app = new AppContext();
-	AppContext* context = (AppContext*)*app;
+	context = new AppContext();
 
 	context->basePath = SDL_GetBasePath();
 
@@ -67,11 +69,10 @@ SDL_AppResult SDL_AppInit(void** app, int argc, char* argv[])
 		return SDL_FailCustom();
 	}
 
-	//This causes renderDoc to crash
-	//context->api = SDL_GetGPUDeviceDriver(context->gpuDevice);
-	//SDL_PropertiesID id;
-	//id = SDL_GetGPUDeviceProperties(context->gpuDevice);
-	//context->gpuName = SDL_GetStringProperty(id, SDL_PROP_GPU_DEVICE_NAME_STRING, "");
+	context->api = SDL_GetGPUDeviceDriver(context->gpuDevice);
+	SDL_PropertiesID id;
+	id = SDL_GetGPUDeviceProperties(context->gpuDevice);
+	context->gpuName = SDL_GetStringProperty(id, SDL_PROP_GPU_DEVICE_NAME_STRING, "");
 
 	context->window = SDL_CreateWindow("SphericImageProjector", windowStartWidth, windowStartHeight, SDL_WINDOW_RESIZABLE);
 	if (context->window == NULL)
@@ -116,15 +117,7 @@ SDL_AppResult SDL_AppInit(void** app, int argc, char* argv[])
 	context->defaultPipeline.Initalize(ShaderSettings("default.vert", 0, 1, 0, 0), ShaderSettings("default.frag", 1, 1, 0, 0));
 	context->defaultPipeline.CreatePipeline(context, CreateDefaultVertAttributes(), sizeof(Vertex), 3);
 
-	//allow the depth and render texture to be useable in shaders and whatever
 	context->depthTexture.CreateTexture(context, SDL_GPU_TEXTURETYPE_2D, windowStartWidth, windowStartHeight, SDL_GPU_TEXTUREFORMAT_D16_UNORM, SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET);
-	context->frameTexture.CreateTexture(context, SDL_GPU_TEXTURETYPE_2D, windowStartWidth, windowStartHeight, SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_COLOR_TARGET);
-	context->frameTexture.CreateSampler(context, CreateDefaultPixelSampler());
-	context->depthTexture.CreateSampler(context, CreateDefaultPixelSampler());
-
-	//create the quad to render the frame to
-	context->worldScreen = Create2DQuad(glm::vec3(0.0f), glm::vec3(0.0f));
-	context->worldScreen.BufferGens(context);
 
 	context->lineRenderer.Initalize(context, 100);
 
@@ -156,81 +149,72 @@ SDL_AppResult SDL_AppInit(void** app, int argc, char* argv[])
 		context->sipManager.LoadImage("uvCheck.jpg", i, 45, glm::vec2(1.0f, 1.0f), 31730, true, &context);
 	}*/
 
-	return SDL_APP_CONTINUE;
-}
-
-SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event* event)
-{
-	AppContext* context = (AppContext*)appstate;
-
-	ImGui_ImplSDL3_ProcessEvent(event);
-	if (event->type == SDL_EVENT_QUIT)
+	while (!quit)
 	{
-		context->app_quit = SDL_APP_SUCCESS;
-	}
-	if(event->type == SDL_EVENT_MOUSE_WHEEL)
-	{
-		if(!ImGui::GetIO().WantCaptureMouse || lockMouse)
+		float time = SDL_GetTicks();
+		frameTime = time - pastTime;
+		frameTime /= 1000.0f;
+
+		SDL_GetRelativeMouseState(&xMouse, &yMouse);
+		SDL_Event event;
+		while (SDL_PollEvent(&event))
 		{
-			camera.fov -= camera.fov * 0.1 * event->wheel.y;
-			camera.fov = std::min(170.0f, camera.fov);
+			ImGui_ImplSDL3_ProcessEvent(&event);
+			if (event.type == SDL_EVENT_QUIT)
+			{
+				Quit();
+				quit = true;
+			}
+			if(event.type == SDL_EVENT_MOUSE_WHEEL)
+			{
+				if(!ImGui::GetIO().WantCaptureMouse || lockMouse)
+				{
+					camera.fov -= camera.fov * 0.1 * event.wheel.y;
+					camera.fov = std::min(170.0f, camera.fov);
+				}
+			}
+			if(event.type == SDL_EVENT_KEY_DOWN)
+			{
+				if(event.key.key == SDLK_ESCAPE)
+				{
+					pastXMouse = xMouse;
+					pastYMouse = yMouse;
+					lockMouse = !lockMouse;
+					SDL_SetWindowRelativeMouseMode(context->window, lockMouse);
+				}
+			}
+			if(event.window.type == SDL_EVENT_WINDOW_RESIZED)
+			{
+				int width, height;
+				SDL_GetWindowSize(context->window, &width, &height);
+				camera.width = width;
+				camera.height = height;
+
+				//there is probably a better way
+				context->depthTexture.Delete(context);
+				context->depthTexture.CreateTexture(context, SDL_GPU_TEXTURETYPE_2D, width, height, SDL_GPU_TEXTUREFORMAT_D16_UNORM, SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET);
+			}
 		}
-	}
-	if(event->type == SDL_EVENT_KEY_DOWN)
-	{
-		if(event->key.key == SDLK_ESCAPE)
+		if (quit)
 		{
-			pastXMouse = xMouse;
-			pastYMouse = yMouse;
-			lockMouse = !lockMouse;
-			SDL_SetWindowRelativeMouseMode(context->window, lockMouse);
+			break;
 		}
-	}
-	if(event->window.type == SDL_EVENT_WINDOW_RESIZED)
-	{
-		int width, height;
-		SDL_GetWindowSize(context->window, &width, &height);
-		camera.width = width;
-		camera.height = height;
-		context->width = width;
-		context->height = height;
 
-		//there is probably a better way
-		context->depthTexture.Delete(context);
-		context->depthTexture.CreateTexture(context, SDL_GPU_TEXTURETYPE_2D, width, height, SDL_GPU_TEXTUREFORMAT_D16_UNORM, SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_DEPTH_STENCIL_TARGET);
-		context->frameTexture.Delete(context);
-		context->frameTexture.CreateTexture(context, SDL_GPU_TEXTURETYPE_2D, width, height, SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_COLOR_TARGET);
-		context->frameTexture.CreateSampler(context, CreateDefaultPixelSampler());
-		context->depthTexture.CreateSampler(context, CreateDefaultPixelSampler());
+		Update();
+		Draw();
+
+		pastTime = time;
 	}
 
-	return SDL_APP_CONTINUE;
+	return 1;
 }
 
-SDL_AppResult SDL_AppIterate(void *appstate)
-{
-	AppContext* context = (AppContext*)appstate;
-
-	float time = SDL_GetTicks();
-	frameTime = time - pastTime;
-	frameTime /= 1000.0f;
-	SDL_GetRelativeMouseState(&xMouse, &yMouse);
-
-	Update(context);
-	Draw(context);
-
-	pastTime = time;
-
-	return context->app_quit;
-}
-
-void Update(AppContext* context)
+void Update()
 {
 	ground.rotation.y -= context->sipManager.earthRotationSpeed * frameTime * context->sipManager.speed;
 
-	context->sipManager.sipCamera.Update(context, frameTime);
-
 	context->sipManager.Update(context, frameTime);
+	context->lineRenderer.AddLine(context, glm::vec3(0,3,5), glm::vec3(5,3,5), glm::vec3(1,1,1), glm::vec3(1,0,0), 1);
 
 	if(lockMouse)
 	{
@@ -243,9 +227,14 @@ void Update(AppContext* context)
 		pastXMouse = xMouse;
 		pastYMouse = yMouse;
 	}
+
+	ImGui_ImplSDLGPU3_NewFrame();
+	ImGui_ImplSDL3_NewFrame();
+	ImGui::NewFrame();
+	MainImguiMenu(context);
 }
 
-void Draw(AppContext* context)
+void Draw()
 {
 
 	SDL_GPUCommandBuffer* cmdbuf = SDL_AcquireGPUCommandBuffer(context->gpuDevice);
@@ -256,19 +245,18 @@ void Draw(AppContext* context)
 		return;
 	}
 
-	SDL_GPUTexture* swapChainTexture;
-	if (!SDL_WaitAndAcquireGPUSwapchainTexture(cmdbuf, context->window, &swapChainTexture, NULL, NULL))
+	SDL_GPUTexture* swapchainTexture;
+	if (!SDL_WaitAndAcquireGPUSwapchainTexture(cmdbuf, context->window, &swapchainTexture, NULL, NULL))
 	{
 		SDL_Log("WaitAndAcquireGPUSwapchainTexture failed: %s", SDL_GetError());
 		SDL_FailCustom();
 		return;
 	}
 
-	//main render pass
-	if (swapChainTexture != NULL)
+	if (swapchainTexture != NULL)
 	{
 		SDL_GPUColorTargetInfo colorTargetInfo = {};
-		colorTargetInfo.texture = context->frameTexture.texture;
+		colorTargetInfo.texture = swapchainTexture;
 		colorTargetInfo.clear_color = (SDL_FColor){ abs(0.0f - context->sipManager.GetDayNightCycle()), abs(0.02f - context->sipManager.GetDayNightCycle()), abs(0.05f - context->sipManager.GetDayNightCycle()), 1.0f };
 		colorTargetInfo.load_op = SDL_GPU_LOADOP_CLEAR;
 		colorTargetInfo.store_op = SDL_GPU_STOREOP_STORE;
@@ -277,14 +265,11 @@ void Draw(AppContext* context)
 		depthStencilTargetInfo.texture = context->depthTexture.texture;
         depthStencilTargetInfo.cycle = true;
         depthStencilTargetInfo.clear_depth = true;
-        depthStencilTargetInfo.clear_stencil = false;
+        depthStencilTargetInfo.clear_stencil = true;
         depthStencilTargetInfo.load_op = SDL_GPU_LOADOP_CLEAR;
         depthStencilTargetInfo.store_op = SDL_GPU_STOREOP_STORE;
         depthStencilTargetInfo.stencil_load_op = SDL_GPU_LOADOP_CLEAR;
         depthStencilTargetInfo.stencil_store_op = SDL_GPU_STOREOP_STORE;
-
-
-		//render the world
 
 		SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, &depthStencilTargetInfo);
 		context->defaultPipeline.Bind(renderPass);
@@ -292,7 +277,7 @@ void Draw(AppContext* context)
 
 		glm::mat4 proj = camera.GetProjMat();
 		glm::mat4 view = camera.GetViewMat();
-
+		
 		ground.CreateModelMat();
 		glm::mat4 combineMat = proj * view * ground.modelMatrix;
 		context->defaultPipeline.vertexShader.AddMat4(combineMat);
@@ -304,52 +289,21 @@ void Draw(AppContext* context)
 		context->sipManager.Draw(context, &camera, renderPass, cmdbuf);
 		context->lineRenderer.Draw(context, &camera, renderPass, cmdbuf);
 
-		SDL_EndGPURenderPass(renderPass);
-
-		context->sipManager.sipCamera.Render(context, cmdbuf);
-
-		//extra render stuff like displaying world
-
-		colorTargetInfo = {};
-		colorTargetInfo.texture = swapChainTexture;
-		colorTargetInfo.clear_color = (SDL_FColor){ 0.2f, 0.2f, 0.2f, 0.0f };
-		colorTargetInfo.load_op = SDL_GPU_LOADOP_CLEAR;
-		colorTargetInfo.store_op = SDL_GPU_STOREOP_STORE;
-		renderPass = SDL_BeginGPURenderPass(cmdbuf, &colorTargetInfo, 1, NULL);
-
-		//bind the image pipeline as it takes uvs and puts an image on
-		context->sipManager.pipeline.Bind(renderPass);
-
-		//draw the rendered frame
-		context->frameTexture.BindSampler(renderPass, 0);
-		context->sipManager.pipeline.vertexShader.AddMat4(glm::scale(glm::mat4(1.0f), glm::vec3(1.0f, -1.0f, 1.0f)));
-		context->sipManager.pipeline.vertexShader.BindVertexUniformData(cmdbuf, 0);
-		context->worldScreen.DrawMesh(context, renderPass, cmdbuf);
-
-		ImGui_ImplSDLGPU3_NewFrame();
-		ImGui_ImplSDL3_NewFrame();
-		ImGui::NewFrame();
-		MainImguiMenu(context);
 		DrawImgui(cmdbuf, renderPass);
 
 		SDL_EndGPURenderPass(renderPass);
-
 	}
 
 	SDL_SubmitGPUCommandBuffer(cmdbuf);
 }
 
-void SDL_AppQuit(void* appstate, SDL_AppResult result)
+void Quit()
 {
-	AppContext* context = (AppContext*)appstate;
-
 	if(context)
 	{
 		groundTexture.Delete(context);
 		context->depthTexture.Delete(context);
-		context->frameTexture.Delete(context);
 		ground.Delete(context);
-		context->worldScreen.Delete(context);
 
 		context->sipManager.Clean(context);
 		context->lineRenderer.Clean(context);

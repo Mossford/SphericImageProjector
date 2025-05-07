@@ -2,6 +2,7 @@
 #include <SDL3/SDL.h>
 #include <glm/glm.hpp>
 #include "sipImage.hpp"
+#include "sipCamera.hpp"
 #include "pipeline.hpp"
 #include "camera.hpp"
 
@@ -37,6 +38,8 @@ public:
     const float latitude = -45;
     //the distance of the images
     const float radius = 1000.0f;
+
+    SIPCamera sipCamera;
 
     SIPManager();
     void Initalize(AppContext* context, int maxImages, float baseTime);

@@ -139,7 +139,7 @@ void SIPImage::CreateFromFile(std::string file, float azimuth, float altitude, g
         altitude = ecliptic.y;
     }
 
-    image.LoadFromLocation(context, file);
+    image.LoadFromFile(context, file);
     mesh = Create2DQuadSpherical(glm::vec3(0), glm::vec3(azimuth, altitude, 1.0f), angularSize, 2);
     mesh.BufferGens(context);
 
@@ -204,7 +204,6 @@ void SIPImage::CreateFromSurface(SDL_Surface* surface, float azimuth, float alti
 
         azimuth = ecliptic.x;
         altitude = ecliptic.y;
-
     }
 
     image.CreateFromSurface(context, surface);
@@ -247,5 +246,40 @@ void SIPImage::Delete(AppContext* context)
 void SIPImage::ApplyRotation(float earthRotation, float earthOrbit, float latitude, float deltaTime, float time)
 {
     this->rotation.y -= (earthOrbit + earthRotation) * deltaTime;
+}
+
+glm::vec3 SIPImage::GetPosition()
+{
+    //not needed as the does the same thing as returning the mesh position
+    /*float degToRad = M_PI / 180.0f;
+
+    glm::mat4 rotationMat = glm::mat4(1.0f);
+    rotationMat = glm::rotate(rotationMat, rotation.x * degToRad, glm::vec3(1.0f,0.0f,0.0f));
+    rotationMat = glm::rotate(rotationMat, rotation.y * degToRad, glm::vec3(0.0f,1.0f,0.0f));
+    rotationMat = glm::rotate(rotationMat, rotation.z * degToRad, glm::vec3(0.0f,0.0f,1.0f));
+
+    glm::vec3 target = SphericToVec(ConvRotAxisToNonAxisEcliptic(rotation, {azimuth, altitude}));
+
+    target = glm::vec3(rotationMat * glm::vec4(target, 1.0f));
+
+    target = glm::normalize(target) * radius;*/
+
+    return mesh.position;
+}
+
+glm::vec3 SIPImage::ProjectPosToImage(AppContext* context, glm::vec3 pos)
+{
+    float degToRad = M_PI / 180.0f;
+
+    glm::mat4 rotationMat = glm::mat4(1.0f);
+    rotationMat = glm::rotate(rotationMat, rotation.x * degToRad, glm::vec3(1.0f,0.0f,0.0f));
+    rotationMat = glm::rotate(rotationMat, rotation.y * degToRad, glm::vec3(0.0f,1.0f,0.0f));
+    rotationMat = glm::rotate(rotationMat, rotation.z * degToRad, glm::vec3(0.0f,0.0f,1.0f));
+
+    pos = glm::vec3(rotationMat * glm::vec4(pos, 1.0f));
+
+    pos = glm::normalize(pos) * context->sipManager.radius;
+
+    return pos;
 }
 

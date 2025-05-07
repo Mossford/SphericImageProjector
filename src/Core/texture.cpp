@@ -39,11 +39,14 @@ void Texture::CreateTexture(AppContext* context, SDL_GPUTextureType type, int wi
 	textureInfo.usage = usage;
 
 	texture = SDL_CreateGPUTexture(context->gpuDevice, &textureInfo);
+
+    samplerBinding.texture = texture;
 }
 
 void Texture::CreateSampler(AppContext* context, SDL_GPUSamplerCreateInfo samplerInfo)
 {
     sampler = SDL_CreateGPUSampler(context->gpuDevice, &samplerInfo);
+    samplerBinding.sampler = sampler;
 }
 
 void Texture::LoadFromFile(AppContext* context, std::string file)
@@ -131,12 +134,15 @@ void Texture::LoadFromFile(AppContext* context, std::string file)
 
     SDL_UploadToGPUTexture(copyPass, &textureTransferInfo, &textureRegion, false);
 
+    this->file = file;
+    this->width = image->w;
+    this->height = image->h;
+
 	SDL_EndGPUCopyPass(copyPass);
 	SDL_SubmitGPUCommandBuffer(uploadCmdBuf);
 	SDL_DestroySurface(image);
 	SDL_ReleaseGPUTransferBuffer(context->gpuDevice, textureTransferBuffer);
 
-    this->file = file;
     SDL_GPUTextureSamplerBinding samplerBind = {};
     samplerBind.texture = texture;
     samplerBind.sampler = sampler;
@@ -228,12 +234,15 @@ void Texture::LoadFromLocation(AppContext* context, std::string location)
 
     SDL_UploadToGPUTexture(copyPass, &textureTransferInfo, &textureRegion, false);
 
+    this->file = location;
+    this->width = image->w;
+    this->height = image->h;
+
     SDL_EndGPUCopyPass(copyPass);
     SDL_SubmitGPUCommandBuffer(uploadCmdBuf);
     SDL_DestroySurface(image);
     SDL_ReleaseGPUTransferBuffer(context->gpuDevice, textureTransferBuffer);
 
-    this->file = location;
     SDL_GPUTextureSamplerBinding samplerBind = {};
     samplerBind.texture = texture;
     samplerBind.sampler = sampler;
@@ -325,6 +334,9 @@ void Texture::CreateFromSurface(AppContext* context, SDL_Surface* image)
 
     SDL_UploadToGPUTexture(copyPass, &textureTransferInfo, &textureRegion, false);
 
+    this->width = image->w;
+    this->height = image->h;
+
     SDL_EndGPUCopyPass(copyPass);
     SDL_SubmitGPUCommandBuffer(uploadCmdBuf);
     SDL_DestroySurface(image);
@@ -338,6 +350,12 @@ void Texture::CreateFromSurface(AppContext* context, SDL_Surface* image)
 
 void Texture::BindSampler(SDL_GPURenderPass* renderPass, int slot)
 {
+    if(texture == NULL || sampler == NULL || samplerBinding.texture == NULL || samplerBinding.sampler == NULL)
+    {
+        SDL_Log("Texture or sampler was NULL or samplerbinding refs were NULL");
+        return;
+    }
+
     SDL_BindGPUFragmentSamplers(renderPass, slot, &samplerBinding, 1);
 }
 
@@ -347,4 +365,58 @@ void Texture::Delete(AppContext* context)
         SDL_ReleaseGPUTexture(context->gpuDevice, texture);
     if(sampler != NULL)
         SDL_ReleaseGPUSampler(context->gpuDevice, sampler);
+}
+
+SDL_GPUSamplerCreateInfo CreateDefaultPixelSampler()
+{
+    SDL_GPUSamplerCreateInfo samplerInfo = {};
+    samplerInfo.min_filter = SDL_GPU_FILTER_NEAREST;
+    samplerInfo.mag_filter = SDL_GPU_FILTER_NEAREST;
+    samplerInfo.mipmap_mode = SDL_GPU_SAMPLERMIPMAPMODE_NEAREST;
+    samplerInfo.address_mode_u = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
+    samplerInfo.address_mode_v = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
+    samplerInfo.address_mode_w = SDL_GPU_SAMPLERADDRESSMODE_CLAMP_TO_EDGE;
+    return samplerInfo;
+}
+
+void BindTextures(SDL_GPURenderPass* renderPass, int slot, Texture** textures, int count)
+{
+    SDL_GPUTextureSamplerBinding* bindings = new SDL_GPUTextureSamplerBinding[count];
+    for(int i = 0; i < count; i++)
+    {
+        if(textures[i]->texture == NULL || textures[i]->sampler == NULL)
+        {
+            SDL_Log("Texture or sampler was NULL");
+            return;
+        }
+        SDL_GPUTextureSamplerBinding samplerBind = {};
+        samplerBind.texture = textures[i]->texture;
+        samplerBind.sampler = textures[i]->sampler;
+        bindings[i] = samplerBind;
+    }
+
+    SDL_BindGPUFragmentSamplers(renderPass, slot, bindings, count);
+
+    delete[] bindings;
+}
+
+void CopyTexture(AppContext* context, Texture* src, Texture* dest)
+{
+    SDL_GPUCommandBuffer* cmdBuf = SDL_AcquireGPUCommandBuffer(context->gpuDevice);
+
+    SDL_GPUBlitInfo blitInfo = {};
+    blitInfo.source.texture = src->texture;
+    blitInfo.source.layer_or_depth_plane = 0;
+    blitInfo.source.w = src->width;
+    blitInfo.source.h = src->height;
+    blitInfo.destination.texture = dest->texture;
+    blitInfo.destination.layer_or_depth_plane = 0;
+    blitInfo.destination.w = dest->width;
+    blitInfo.destination.h = dest->height;
+    blitInfo.load_op = SDL_GPU_LOADOP_DONT_CARE;
+    blitInfo.filter = SDL_GPU_FILTER_LINEAR;
+
+    SDL_BlitGPUTexture(cmdBuf, &blitInfo);
+
+    SDL_SubmitGPUCommandBuffer(cmdBuf);
 }

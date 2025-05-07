@@ -3,6 +3,7 @@
 
 void SIPImageMenu(AppContext* context);
 void SIPImageCreationMenu(AppContext* context, bool* showMenu);
+void SIPCameraMenu(AppContext* context);
 void ShowError(std::string message);
 void SetImGuiStyle();
 static void HelpMarker(const char* desc);
@@ -13,6 +14,7 @@ void MainImguiMenu(AppContext* context)
 {
     static bool showSIPImageMenu = false;
     static bool showSIPImageCreationMenu = false;
+    static bool showSIPCameraMenu = false;
     float curTime = SDL_GetTicks();
 
     static ImGuiWindowFlags window_flags = 0;
@@ -78,12 +80,14 @@ void MainImguiMenu(AppContext* context)
 
     ImGui::InputFloat("TimeScale", &context->sipManager.speed, 1.0f, 10.0f, "%.1fx");
 
+
     if (ImGui::BeginMenuBar())
     {
         if (ImGui::BeginMenu("Menus"))
         {
-            ImGui::MenuItem("SIPImageMenu", NULL, &showSIPImageMenu);
-            ImGui::MenuItem("SIPImageCreationMenu", NULL, &showSIPImageCreationMenu);
+            ImGui::MenuItem("SIPImages", NULL, &showSIPImageMenu);
+            ImGui::MenuItem("SIPImageCreation", NULL, &showSIPImageCreationMenu);
+            ImGui::MenuItem("SIPCamera", NULL, &showSIPCameraMenu);
             ImGui::EndMenu();
         }
         ImGui::EndMenuBar();
@@ -96,6 +100,10 @@ void MainImguiMenu(AppContext* context)
     if(showSIPImageCreationMenu)
     {
         SIPImageCreationMenu(context, &showSIPImageCreationMenu);
+    }
+    if(showSIPCameraMenu)
+    {
+        SIPCameraMenu(context);
     }
 
     ImGui::End();
@@ -113,7 +121,7 @@ void SIPImageMenu(AppContext* context)
 {
     float radToDeg = 180.0f / M_PI;
 
-    ImGui::Begin("SIPImageMenu");
+    ImGui::Begin("SIPImages");
     ImGui::SetWindowSize({1280 / 2, 720 / 2}, ImGuiCond_Once);
 
     float width = ImGui::GetWindowWidth();
@@ -305,6 +313,50 @@ void SIPImageCreationMenu(AppContext* context, bool* showMenu)
 
     ImGui::End();
 }
+
+void SIPCameraMenu(AppContext* context)
+{
+    ImGui::Begin("SIPCamera");
+    ImGui::SetWindowSize({1280, 720}, ImGuiCond_Once);
+
+    ImGui::InputFloat("Accumulation time", &context->sipManager.sipCamera.accumResetTime, 1.0f, 1.0f, "%.2f");
+    context->sipManager.sipCamera.accumResetTime = std::max(context->sipManager.sipCamera.accumResetTime, 0.01f);
+    ImGui::InputFloat("Frame Mix", &context->sipManager.sipCamera.frameMix, 0.001f, 1.0f);
+    context->sipManager.sipCamera.frameMix = std::max(context->sipManager.sipCamera.frameMix, 0.001f);
+
+    ImVec2 pos = ImGui::GetCursorScreenPos();
+    ImGui::ImageWithBg(ImTextureID(&context->sipManager.sipCamera.accumFrame.samplerBinding), {1280, 720}, {0,0}, {1,1}, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+    if (ImGui::BeginItemTooltip())
+    {
+        float region_sz = 32.0f;
+        float region_x = ImGui::GetIO().MousePos.x - pos.x - region_sz * 0.5f;
+        float region_y = ImGui::GetIO().MousePos.y - pos.y - region_sz * 0.5f;
+        float zoom = 4.0f;
+        if (region_x < 0.0f)
+        {
+            region_x = 0.0f;
+        }
+        else if (region_x > 1280 - region_sz)
+        {
+            region_x = 720 - region_sz;
+        }
+        if (region_y < 0.0f)
+        {
+            region_y = 0.0f;
+        }
+        else if (region_y > 1280 - region_sz)
+        {
+            region_y = 720 - region_sz;
+        }
+        ImVec2 uv0 = ImVec2((region_x) / 1280, (region_y) / 720);
+        ImVec2 uv1 = ImVec2((region_x + region_sz) / 1280, (region_y + region_sz) / 720);
+        ImGui::ImageWithBg(ImTextureID(&context->sipManager.sipCamera.accumFrame.samplerBinding), ImVec2(region_sz * zoom, region_sz * zoom), uv0, uv1, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+        ImGui::EndTooltip();
+    }
+
+    ImGui::End();
+}
+
 
 
 void ShowError(std::string message)
