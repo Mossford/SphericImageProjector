@@ -73,7 +73,8 @@ void SIPManager::LoadImage(std::string file, float azimuth, float altitude, glm:
     else if(time != baseTime && baseTime != -1)
     {
         //check for time passing
-        deltaTime = time - baseTime;
+        float convTime = (floorf(this->time / 3600.0f) * 10000) + (floorf(this->time / 60.0f) * 100) + this->time;
+        deltaTime = (convTime + baseTime) - time;
     }
 
     SIPImage image;
@@ -112,7 +113,8 @@ void SIPManager::LoadImageAbsolute(std::string location, float azimuth, float al
     else if(time != baseTime && baseTime != -1)
     {
         //check for time passing
-        deltaTime = time - baseTime;
+        float convTime = (floorf(this->time / 3600.0f) * 10000) + (floorf(this->time / 60.0f) * 100) + this->time;
+        deltaTime = (convTime + baseTime) - time;
     }
 
     SIPImage image;
@@ -152,7 +154,8 @@ void SIPManager::LoadImage(SDL_Surface* surface, float azimuth, float altitude, 
     else if(time != baseTime && baseTime != -1)
     {
         //check for time passing
-        deltaTime = time - baseTime;
+        float convTime = (floorf(this->time / 3600.0f) * 10000) + (floorf(this->time / 60.0f) * 100) + this->time;
+        deltaTime = (convTime + baseTime) - time;
     }
 
     SIPImage image;
@@ -191,7 +194,8 @@ void SIPManager::LoadImage(std::string file, float azimuth, float altitude, glm:
     else if(time != baseTime && baseTime != -1)
     {
         //check for time passing
-        deltaTime = time - baseTime;
+        float convTime = (floorf(this->time / 3600.0f) * 10000) + (floorf(this->time / 60.0f) * 100) + this->time;
+        deltaTime = (convTime + baseTime) - time;
     }
 
     SIPImage image;
@@ -230,7 +234,8 @@ void SIPManager::LoadImageAbsolute(std::string location, float azimuth, float al
     else if(time != baseTime && baseTime != -1)
     {
         //check for time passing
-        deltaTime = time - baseTime;
+        float convTime = (floorf(this->time / 3600.0f) * 10000) + (floorf(this->time / 60.0f) * 100) + this->time;
+        deltaTime = (convTime + baseTime) - time;
     }
 
     SIPImage image;
@@ -269,7 +274,8 @@ void SIPManager::LoadImage(SDL_Surface* surface, float azimuth, float altitude, 
     else if(time != baseTime && baseTime != -1)
     {
         //check for time passing
-        deltaTime = time - baseTime;
+        float convTime = (floorf(this->time / 3600.0f) * 10000) + (floorf(this->time / 60.0f) * 100) + this->time;
+        deltaTime = (convTime + baseTime) - time;
     }
 
     SIPImage image;

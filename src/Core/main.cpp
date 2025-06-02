@@ -87,7 +87,7 @@ SDL_AppResult SDL_AppInit(void** app, int argc, char* argv[])
 	}
 	if(SDL_WindowSupportsGPUPresentMode(context->gpuDevice, context->window, SDL_GPU_PRESENTMODE_IMMEDIATE))
 	{
-		//SDL_SetGPUSwapchainParameters(context->gpuDevice, context->window, SDL_GPU_SWAPCHAINCOMPOSITION_SDR, SDL_GPU_PRESENTMODE_IMMEDIATE);
+		SDL_SetGPUSwapchainParameters(context->gpuDevice, context->window, SDL_GPU_SWAPCHAINCOMPOSITION_SDR, SDL_GPU_PRESENTMODE_IMMEDIATE);
 	}
 
 	std::string fontPath = std::string(context->basePath) + "Inter-VariableFont.ttf";
